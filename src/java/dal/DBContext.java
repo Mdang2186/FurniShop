@@ -11,18 +11,25 @@ public class DBContext {
 
     public DBContext() {
         try {
-            // ----- CHECK THESE CONNECTION PARAMETERS CAREFULLY -----
-            String serverName = "DOCKUMMMK\\MSSQLSERVER"; // This is your server name
+            // ----- CẤU HÌNH KẾT NỐI CHÍNH XÁC -----
+            
+            // Tên server ĐÚNG (theo bạn cung cấp)
+            String serverName = "DOOKUMMINK\\MSSQLSERVER01"; 
             String dbName = "LuxeHomeDB";
-            String port = "1433";
+            
+            // !!!!! VẪN PHẢI KIỂM TRA LẠI SỐ CỔNG NÀY !!!!!
+            // (Xem Bước 1 ở câu trả lời trước để tìm cổng động)
+            String port = "1433"; 
+            
             String user = "sa";
-            String pass = "Mdang2186"; // Your password
-            // --------------------------------------------------------
+            String pass = "Mdang2186";
+
+            // -----------------------------------------
 
             String url = String.format("jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
                                        serverName, port, dbName);
 
-            System.out.println("Connecting to database with URL: " + url);
+            System.out.println("Attempting to connect with URL: " + url);
 
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             connection = DriverManager.getConnection(url, user, pass);
@@ -32,11 +39,9 @@ public class DBContext {
             }
 
         } catch (ClassNotFoundException ex) {
-            // This error means the JDBC driver JAR is missing from Libraries
-            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: SQL Server JDBC Driver not found in project libraries.", ex);
+            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: SQL Server JDBC Driver not found.", ex);
         } catch (SQLException ex) {
-            // This error means the connection parameters or server configuration is wrong
-            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: Failed to connect to the database. Check connection string, server status, TCP/IP protocol, and firewall.", ex);
+            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: Connection Failed! Check credentials, server name, port, and SQL service status.", ex);
         }
     }
 }
