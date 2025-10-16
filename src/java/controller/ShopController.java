@@ -20,41 +20,40 @@ public class ShopController extends HttpServlet {
         ProductDAO pdao = new ProductDAO();
         CategoryDAO cdao = new CategoryDAO();
 
-        // Lấy các tham số từ URL
+        // Lấy các tham số lọc và tìm kiếm từ URL
         String keyword = request.getParameter("keyword");
         String categoryId_raw = request.getParameter("cid");
         String sortBy = request.getParameter("sort");
 
         // Chuẩn bị danh sách category ID để lọc
         List<Integer> categoryIds = new ArrayList<>();
-        if (categoryId_raw != null && !categoryId_raw.isEmpty()) {
+        if (categoryId_raw != null && !categoryId_raw.isEmpty() && !categoryId_raw.equals("all")) {
             try {
                 categoryIds.add(Integer.parseInt(categoryId_raw));
             } catch (NumberFormatException e) {
-                // Bỏ qua nếu cid không phải là số
                 System.out.println("Invalid category ID format: " + categoryId_raw);
             }
         }
         
-        // Đặt giá trị mặc định cho sắp xếp nếu không có
+        // Đặt giá trị sắp xếp mặc định nếu không có
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "newest"; 
         }
 
-        // Gọi phương thức lọc và tìm kiếm duy nhất
+        // Gọi phương thức DAO mạnh mẽ để lấy dữ liệu
         List<Product> productList = pdao.searchAndFilterProducts(keyword, categoryIds, 0, 0, sortBy);
         
-        // Lấy tất cả danh mục để hiển thị trên sidebar
+        // Lấy tất cả danh mục để hiển thị trên bộ lọc
         List<Category> categoryList = cdao.getAllCategories();
         
         // Đặt các thuộc tính vào request để JSP có thể truy cập
         request.setAttribute("products", productList);
         request.setAttribute("categories", categoryList);
         
-        // Giữ lại giá trị lọc để hiển thị lại trên form
+        // Gửi lại các giá trị đã chọn để JSP có thể hiển thị lại trạng thái bộ lọc
         request.setAttribute("selectedCid", categoryId_raw);
-        request.setAttribute("keyword", keyword);
-        request.setAttribute("sortBy", sortBy);
+        request.setAttribute("keywordValue", keyword);
+        request.setAttribute("sortByValue", sortBy);
         
         // Chuyển tiếp đến trang JSP
         request.getRequestDispatcher("shop.jsp").forward(request, response);

@@ -1,25 +1,23 @@
-<footer class="py-5 bg-dark text-white mt-auto">
-    <div class="container">
-        <div class="row">
-             <div class="col-md-4 mb-3">
-                <h5><i class="fas fa-couch"></i> LUXEHOME</h5>
-                <p class="text-muted">Ki?n t?o không gian, nâng t?m cu?c s?ng.</p>
+<footer class="bg-dark text-white pt-5 pb-4 mt-auto">
+    <div class="container text-center text-md-start">
+        <div class="row text-center text-md-start">
+            <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
+                <h5 class="text-uppercase mb-4 fw-bold text-primary"><i class="fas fa-drafting-compass"></i> The Inner Space</h5>
+                <p class="text-white-50">Mang ??n nh?ng s?n ph?m n?i th?t cao c?p, k?t h?p gi?a th?m m? và công n?ng, t?o nên không gian s?ng ??ng c?p và tinh t?.</p>
             </div>
-            <div class="col-6 col-md-2 offset-md-1 mb-3">
-                <h5>Khám Phá</h5>
-                <ul class="nav flex-column">
-                    <li class="nav-item mb-2"><a href="home" class="nav-link p-0 text-muted">Trang ch?</a></li>
-                    <li class="nav-item mb-2"><a href="shop" class="nav-link p-0 text-muted">C?a hàng</a></li>
-                </ul>
-            </div>
-             <div class="col-6 col-md-4 offset-md-1 mb-3">
-                <h5>Liên h?</h5>
-                 <p class="text-muted mb-1"><i class="fas fa-map-marker-alt"></i> 123 ??i l? Tinh T?, Q1, TP.HCM</p>
-                 <p class="text-muted mb-1"><i class="fas fa-phone"></i> 1900-8888</p>
+            <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
+                <h5 class="text-uppercase mb-4 fw-bold">Thông tin nhóm 4</h5>
+                <div class="text-white-50">
+                    <p class="mb-1">??ng ?ình Th? Hi?u (17/10/2004)</p>
+                    <p class="mb-1">Lý Ng?c Long (14/02/2003)</p>
+                    <p class="mb-1">Nguy?n H?u L??ng (28/03/2004)</p>
+                    <p class="mb-1">?? Công Minh (29/10/2004)</p>
+                </div>
             </div>
         </div>
-        <div class="d-flex justify-content-between pt-4 mt-4 border-top">
-            <p>&copy; 2025 LuxeHome. All rights reserved.</p>
+        <hr class="my-3">
+        <div class="row align-items-center">
+            <div class="col-md-7 col-lg-8"><p class="text-center text-md-start text-white-50">© 2025 The Inner Space. All Rights Reserved.</p></div>
         </div>
     </div>
 </footer>
