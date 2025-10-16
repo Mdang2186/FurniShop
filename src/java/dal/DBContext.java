@@ -11,16 +11,12 @@ public class DBContext {
 
     public DBContext() {
         try {
-            // ----- CẤU HÌNH KẾT NỐI CHÍNH XÁC -----
+            // ----- FINAL CONNECTION PARAMETERS -----
+            // Based on your screenshots, these should be correct.
             
-            // Tên server ĐÚNG (theo bạn cung cấp)
             String serverName = "DOOKUMMINK\\MSSQLSERVER01"; 
             String dbName = "LuxeHomeDB";
-            
-            // !!!!! VẪN PHẢI KIỂM TRA LẠI SỐ CỔNG NÀY !!!!!
-            // (Xem Bước 1 ở câu trả lời trước để tìm cổng động)
-            String port = "1433"; 
-            
+            String port = "1433"; // We will verify this in the next step
             String user = "sa";
             String pass = "Mdang2186";
 
@@ -39,7 +35,7 @@ public class DBContext {
             }
 
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: SQL Server JDBC Driver not found.", ex);
+            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: SQL Server JDBC Driver not found in project libraries.", ex);
         } catch (SQLException ex) {
             Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, "FATAL ERROR: Connection Failed! Check credentials, server name, port, and SQL service status.", ex);
         }
