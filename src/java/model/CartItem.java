@@ -16,6 +16,7 @@ public class CartItem {
         this.quantity = quantity;
     }
 
+    // PHƯƠNG THỨC BỊ THIẾU ĐÃ ĐƯỢC BỔ SUNG
     public Product getProduct() {
         return product;
     }
@@ -34,7 +35,9 @@ public class CartItem {
     
     // Phương thức tiện ích để lấy tổng giá của mục này
     public double getTotalPrice() {
-        return product.getPrice() * quantity;
+        if (product != null) {
+            return product.getPrice() * quantity;
+        }
+        return 0;
     }
-     
 }

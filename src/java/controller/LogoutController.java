@@ -1,4 +1,3 @@
-// controller/LogoutController.java
 package controller;
 
 import jakarta.servlet.ServletException;
@@ -11,9 +10,16 @@ import java.io.IOException;
 
 @WebServlet(name = "LogoutController", urlPatterns = {"/logout"})
 public class LogoutController extends HttpServlet {
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        session.removeAttribute("account");
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false); // Lấy session hiện có, không tạo mới
+        if (session != null) {
+            // Hủy toàn bộ session, an toàn hơn là chỉ xóa một thuộc tính
+            session.invalidate(); 
+        }
+        // Chuyển hướng về trang chủ
         response.sendRedirect("home");
     }
 }
