@@ -13,14 +13,13 @@ import model.User;
 @WebServlet(name = "AccountController", urlPatterns = {"/account"})
 public class AccountController extends HttpServlet {
 
-    // Hiển thị trang thông tin tài khoản
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("account");
 
-        // Bắt buộc đăng nhập để truy cập
         if (user == null) {
             response.sendRedirect("login");
             return;
@@ -29,7 +28,6 @@ public class AccountController extends HttpServlet {
         request.getRequestDispatcher("account.jsp").forward(request, response);
     }
 
-    // Xử lý việc cập nhật thông tin
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -42,7 +40,6 @@ public class AccountController extends HttpServlet {
             return;
         }
 
-        // Lấy thông tin từ form
         String fullName = request.getParameter("fullName");
         String phone = request.getParameter("phone");
         String address = request.getParameter("address");
