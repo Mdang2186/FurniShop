@@ -12,8 +12,8 @@ import java.util.Properties;
 
 public class EmailService {
 
-    private final String FROM_EMAIL = "cskhfurnishop@gmail.com";
-    private final String SENDGRID_API_KEY = "xxxx";
+    private final String FROM_EMAIL = "xxxxfxxx@gmail.com";
+    private final String SENDGRID_API_KEY = "ABCD";
 
     public boolean sendVerificationCode(String toEmail, String subject, String body) {
         Properties props = new Properties();

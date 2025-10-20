@@ -12,6 +12,12 @@
                 <a href="orders" class="list-group-item list-group-item-action">
                     <i class="fas fa-clipboard-list me-2"></i>Lịch sử đơn hàng
                 </a>
+
+                <%-- THÊM DÒNG NÀY VÀO ĐÂY --%>
+                <a href="change-password" class="list-group-item list-group-item-action">
+                    <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                </a>
+
                 <a href="logout" class="list-group-item list-group-item-action text-danger">
                     <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                 </a>
@@ -47,7 +53,7 @@
                     <input type="tel" id="phone" name="phone" class="form-control" value="${sessionScope.account.phone}" required>
                 </div>
                 <div class="mb-3">
-                    <label for="address" class="form-label">Địa chỉ giao hàng</glabel>
+                    <label for="address" class="form-label">Địa chỉ giao hàng</label>
                     <textarea id="address" name="address" class="form-control" rows="3" required>${sessionScope.account.address}</textarea>
                 </div>
                 

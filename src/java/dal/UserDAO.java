@@ -14,7 +14,7 @@ public class UserDAO extends DBContext {
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, email);
             st.setString(2, rawPassword);
-            
+
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
                     User user = new User();
@@ -60,7 +60,7 @@ public class UserDAO extends DBContext {
             System.out.println("Error in registerUser: " + e.getMessage());
         }
     }
-    
+
     public boolean updateUserProfile(User user) {
         String sql = "UPDATE Users SET FullName = ?, Phone = ?, Address = ? WHERE UserID = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -74,7 +74,6 @@ public class UserDAO extends DBContext {
             return false;
         }
     }
-    
 
     // 2. Thêm người dùng mới
     public boolean registerUser(User user) {
@@ -87,7 +86,7 @@ public class UserDAO extends DBContext {
             ps.setString(3, user.getFullName());
             ps.setString(4, user.getRole());
             ps.setDate(5, new java.sql.Date(user.getCreatedAt().getTime()));
-            
+
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,14 +102,14 @@ public class UserDAO extends DBContext {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new User(
-                    rs.getInt("UserID"),
-                    rs.getString("FullName"),
-                    rs.getString("Email"),
-                    rs.getString("PasswordHash"),
-                    rs.getString("Phone"),
-                    rs.getString("Address"),
-                    rs.getString("Role"),
-                    rs.getDate("CreatedAt")
+                        rs.getInt("UserID"),
+                        rs.getString("FullName"),
+                        rs.getString("Email"),
+                        rs.getString("PasswordHash"),
+                        rs.getString("Phone"),
+                        rs.getString("Address"),
+                        rs.getString("Role"),
+                        rs.getDate("CreatedAt")
                 );
             }
         } catch (Exception e) {
@@ -120,7 +119,7 @@ public class UserDAO extends DBContext {
     }
 
     public boolean updatePasswordByEmail(String email, String newPasswordHash) {
-        String query = "UPDATE users SET PasswordHash = ? WHERE Email = ?"; // Sửa: users (chữ thường)
+        String query = "UPDATE users SET PasswordHash = ? WHERE Email = ?";
         try {
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, newPasswordHash);
@@ -131,5 +130,19 @@ public class UserDAO extends DBContext {
         }
         return false;
     }
-    
+
+    public boolean updatePasswordByID(int userID, String newPassword) {
+        // Lưu ý: newPassword nên được mã hóa trước khi gọi hàm này
+        String query = "UPDATE users SET PasswordHash = ? WHERE UserID = ?";
+        try {
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, newPassword);
+            ps.setInt(2, userID);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }
