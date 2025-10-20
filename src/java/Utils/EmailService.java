@@ -13,7 +13,7 @@ import java.util.Properties;
 public class EmailService {
 
     private final String FROM_EMAIL = "cskhfurnishop@gmail.com";
-    private final String SENDGRID_API_KEY = "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";
+    private final String SENDGRID_API_KEY = "xxxx";
 
     public boolean sendVerificationCode(String toEmail, String subject, String body) {
         Properties props = new Properties();
