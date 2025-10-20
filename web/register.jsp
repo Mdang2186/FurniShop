@@ -15,6 +15,7 @@
             </c:if>
 
             <form action="register" method="post">
+                <input type="hidden" name="action" value="register">
                 <div class="mb-3">
                     <label for="fullName" class="form-label">Họ và Tên</label>
                     <input type="text" class="form-control" id="fullName" name="fullName" required>

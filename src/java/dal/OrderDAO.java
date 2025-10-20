@@ -12,12 +12,12 @@ import model.OrderItem;
 import model.Product;
 
 public class OrderDAO extends DBContext {
-    
+
     public boolean createOrder(Order order) {
         try {
             connection.setAutoCommit(false);
             String sqlOrder = "INSERT INTO Orders (UserID, TotalAmount, Status, PaymentMethod, ShippingAddress, Note) VALUES (?, ?, ?, ?, ?, ?)";
-            
+
             try (PreparedStatement stOrder = connection.prepareStatement(sqlOrder, Statement.RETURN_GENERATED_KEYS)) {
                 stOrder.setInt(1, order.getUserID());
                 stOrder.setDouble(2, order.getTotalAmount());
@@ -47,10 +47,18 @@ public class OrderDAO extends DBContext {
             return true;
         } catch (SQLException e) {
             System.out.println("Error in createOrder transaction: " + e.getMessage());
-            try { connection.rollback(); } catch (SQLException ex) { System.out.println("Error on rollback: " + ex.getMessage()); }
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Error on rollback: " + ex.getMessage());
+            }
             return false;
         } finally {
-            try { connection.setAutoCommit(true); } catch (SQLException ex) { System.out.println("Error setting auto-commit true: " + ex.getMessage()); }
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Error setting auto-commit true: " + ex.getMessage());
+            }
         }
     }
 
@@ -79,7 +87,7 @@ public class OrderDAO extends DBContext {
         }
         return orderList;
     }
-    
+
     private List<OrderItem> getOrderItemsByOrderId(int orderId) {
         List<OrderItem> itemList = new ArrayList<>();
         String sql = "SELECT oi.*, p.ProductName, p.ImageURL FROM OrderItems oi JOIN Products p ON oi.ProductID = p.ProductID WHERE oi.OrderID = ?";
@@ -93,12 +101,12 @@ public class OrderDAO extends DBContext {
                     item.setProductID(rs.getInt("ProductID"));
                     item.setQuantity(rs.getInt("Quantity"));
                     item.setUnitPrice(rs.getDouble("UnitPrice"));
-                    
+
                     Product product = new Product();
                     product.setProductID(rs.getInt("ProductID"));
                     product.setProductName(rs.getString("ProductName"));
                     product.setImageURL(rs.getString("ImageURL"));
-                    
+
                     item.setProduct(product);
                     itemList.add(item);
                 }
@@ -108,4 +116,6 @@ public class OrderDAO extends DBContext {
         }
         return itemList;
     }
+
+
 }
