@@ -13,10 +13,10 @@
             </div>
             <div class="col-md-4 col-lg-4 col-xl-4 mx-auto mt-3">
                 <h5 class="text-uppercase mb-4 fw-bold">Thông tin Nhóm 4</h5>
+                <p class="mb-1">Đỗ Công Minh (29/10/2004)</p>
                 <p class="mb-1">Đặng Đình Thế Hiếu (17/10/2004)</p>
                 <p class="mb-1">Lý Ngọc Long (14/02/2003)</p>
                 <p class="mb-1">Nguyễn Hữu Lương (28/03/2004)</p>
-                <p class="mb-1">Đỗ Công Minh (29/10/2004)</p>
             </div>
             <div class="col-md-4 col-lg-4 col-xl-4 mx-auto mt-3">
                 <h5 class="text-uppercase mb-4 fw-bold">Liên kết</h5>

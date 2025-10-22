@@ -12,9 +12,21 @@ public class User {
     private String role;
     private Date createdAt;
 
-    // Constructor mặc định đã được sửa lỗi
+
     public User() {
     }
+
+    public User(int userID, String fullName, String email, String passwordHash, String phone, String address, String role, Date createdAt) {
+        this.userID = userID;
+        this.fullName = fullName;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.phone = phone;
+        this.address = address;
+        this.role = role;
+        this.createdAt = createdAt;
+    }
+
 
     // Getters and Setters for all fields...
     public int getUserID() { return userID; }
