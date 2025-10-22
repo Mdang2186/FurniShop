@@ -1,87 +1,77 @@
 package Utils;
 
 import jakarta.mail.*;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 /**
- * Email qua SMTP. Lấy cấu hình từ biến môi trường nếu có; nếu không thì dùng hằng mặc định.
- * Có lastError để controller báo rõ.
+ * Gửi email trực tiếp bằng SMTP (Gmail/SendGrid/Mailgun đều OK).
+ *
+ * Cấu hình nhanh (chọn 1 trong 2):
+ *  A) Chỉnh hằng số SMTP_* bên dưới (đơn giản nhất cho đồ án);
+ *  B) Hoặc đặt biến môi trường: SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT, SMTP_FROM_NAME.
  */
 public class EmailService {
 
-    private String lastError = "";
-    public String getLastError() { return lastError; }
-    private void setError(Exception e) { e.printStackTrace(); lastError = e.getMessage(); }
+    /* ====== Cách A: cấu hình trực tiếp tại đây ====== */
+    private static final String SMTP_USER      = "jejangwangminh@gmail.com";    
+    private static final String SMTP_PASS_APP  = "ppdo vxpv waik cdsk";      
+    private static final String SMTP_HOST_DEF  = "smtp.gmail.com";
+    private static final int    SMTP_PORT_DEF  = 587;
+    private static final String FROM_NAME_DEF  = "FurniShop";
+    /* ================================================= */
 
-    // --- Cấu hình mặc định (sửa theo tài khoản của bạn) ---
-    private static final String SMTP_HOST_DEF = "smtp.gmail.com";
-    private static final int    SMTP_PORT_DEF = 587;
-    private static final boolean SMTP_TLS_DEF = true;
+    // Nếu bạn muốn dùng biến môi trường, các giá trị dưới sẽ override hằng số phía trên (nếu có)
+    private final String host = or(System.getenv("SMTP_HOST"), SMTP_HOST_DEF);
+    private final int    port = parseInt(or(System.getenv("SMTP_PORT"), String.valueOf(SMTP_PORT_DEF)), SMTP_PORT_DEF);
+    private final String user = or(System.getenv("SMTP_USER"), SMTP_USER);
+    private final String pass = or(System.getenv("SMTP_PASS"), SMTP_PASS_APP);
+    private final String fromName = or(System.getenv("SMTP_FROM_NAME"), FROM_NAME_DEF);
 
-    private static final String SMTP_USER_DEF = "your_account@gmail.com";
-    private static final String SMTP_PASS_DEF = "your_app_password";
-    private static final String FROM_NAME_DEF = "FurniShop";
-
-    private String env(String k, String def) {
-        String v = System.getenv(k);
-        return (v == null || v.trim().isEmpty()) ? def : v.trim();
-    }
-
-    public boolean send(String to, String subject, String html) {
+    public boolean send(String to, String subject, String htmlBody) {
+        if (isBlank(user) || isBlank(pass)) {
+            System.err.println("SMTP chưa cấu hình. Vui lòng điền SMTP_USER & SMTP_PASS (App Password).");
+            return false;
+        }
         try {
-            String host = env("SMTP_HOST", SMTP_HOST_DEF);
-            int port = parseInt(env("SMTP_PORT", ""), SMTP_PORT_DEF);
-            boolean startTLS = !"false".equalsIgnoreCase(env("SMTP_STARTTLS", "true"));
+            Properties p = new Properties();
+            p.put("mail.smtp.auth", "true");
+            p.put("mail.smtp.starttls.enable", "true");
+            p.put("mail.smtp.host", host);
+            p.put("mail.smtp.port", String.valueOf(port));
 
-            final String user = env("SMTP_USER", SMTP_USER_DEF);
-            final String pass = env("SMTP_PASS", SMTP_PASS_DEF);
-            final String fromName = env("SMTP_FROM_NAME", FROM_NAME_DEF);
-
-            Properties props = new Properties();
-            props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.starttls.enable", String.valueOf(startTLS));
-            props.put("mail.smtp.host", host);
-            props.put("mail.smtp.port", String.valueOf(port));
-
-            Session session = Session.getInstance(props, new Authenticator() {
+            Session session = Session.getInstance(p, new Authenticator() {
                 @Override protected PasswordAuthentication getPasswordAuthentication() {
                     return new PasswordAuthentication(user, pass);
                 }
             });
 
-            MimeMessage msg = new MimeMessage(session);
-            msg.setFrom(new InternetAddress(user, fromName, StandardCharsets.UTF_8.name()));
-            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
-            msg.setSubject(subject, StandardCharsets.UTF_8.name());
-            msg.setContent(html, "text/html; charset=UTF-8");
+            MimeMessage m = new MimeMessage(session);
+            m.setFrom(new InternetAddress(user, fromName, StandardCharsets.UTF_8.name()));
+            m.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
+            m.setSubject(subject, StandardCharsets.UTF_8.name());
+            m.setContent(htmlBody, "text/html; charset=UTF-8");
 
-            Transport.send(msg);
+            Transport.send(m);
             return true;
         } catch (Exception e) {
-            setError(e);
+            e.printStackTrace();
             return false;
         }
     }
 
-    /** Gửi OTP với template HTML ngắn gọn */
+    /** Gửi OTP HTML đơn giản. */
     public boolean sendOtp(String to, String otp) {
         String subject = "Mã OTP xác thực";
-        String body = new StringBuilder()
-                .append("<div style='font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px'>")
-                .append("<p>Xin chào,</p>")
-                .append("<p>Mã OTP của bạn là: <b style='font-size:18px'>").append(otp).append("</b></p>")
-                .append("<p>Mã có hiệu lực trong 10 phút.</p>")
-                .append("<hr style='border:none;border-top:1px solid #eee;margin:16px 0'>")
-                .append("<p style='color:#888'>Email được gửi tự động từ hệ thống FurniShop.</p>")
-                .append("</div>")
-                .toString();
+        String body = "<p>Mã OTP của bạn là: <b style='font-size:18px'>" + otp + "</b></p>"
+                    + "<p>Mã có hiệu lực 10 phút.</p>"
+                    + "<p>Nếu không phải bạn yêu cầu, hãy bỏ qua email này.</p>";
         return send(to, subject, body);
     }
 
-    private static int parseInt(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
-    }
+    /* ====== utils ====== */
+    private static String or(String a, String b){ return isBlank(a) ? b : a; }
+    private static boolean isBlank(String s){ return s == null || s.trim().isEmpty(); }
+    private static int parseInt(String s, int def){ try { return Integer.parseInt(s); } catch(Exception e){ return def; } }
 }
