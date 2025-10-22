@@ -2,79 +2,124 @@ package controller;
 
 import Utils.EmailService;
 import dal.UserDAO;
-import model.User;
-import java.io.IOException;
-import java.util.Random;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.Random;
 
-@WebServlet(name = "PasswordResetController", urlPatterns = {"/password-reset"})
+/**
+ * Khớp form:
+ *  - forgot-password.jsp  (POST email)
+ *  - verify-code.jsp      (POST code, newPassword)
+ */
+@WebServlet(urlPatterns = {"/password-reset"})
 public class PasswordResetController extends HttpServlet {
+    private final UserDAO userDAO = new UserDAO();
+    private final EmailService mailer = new EmailService();
 
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        request.setCharacterEncoding("UTF-8");
-        
-        String action = request.getParameter("action");
-        HttpSession session = request.getSession();
-        UserDAO userDAO = new UserDAO();
-        EmailService emailService = new EmailService();
+        req.getRequestDispatcher("/forgot-password.jsp").forward(req, resp);
+    }
 
-        if ("send-code".equals(action)) {
-            String email = request.getParameter("email");
-            User user = userDAO.getUserByEmail(email);
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
 
-            if (user != null) {
-                String code = String.format("%06d", new Random().nextInt(999999));
-                session.setAttribute("verificationCode", code);
-                session.setAttribute("emailToReset", email);
+        req.setCharacterEncoding("UTF-8");
+        HttpSession session = req.getSession(true);
 
-                String subject = "Your Password Reset Code";
-                String body = "<h1>Password Reset</h1><p>Your verification code is: <b>" + code + "</b></p>";
-                emailService.sendVerificationCode(email, subject, body);
+        // BƯỚC 2: XÁC MINH OTP & ĐỔI MẬT KHẨU
+        String code = t(req.getParameter("code"));
+        String newPassword = t(req.getParameter("newPassword"));
+        if (!code.isEmpty()) {
+            String expect = (String) session.getAttribute("resetCode");
+            Long   exp    = (Long)   session.getAttribute("resetExp");
+            String email  = (String) session.getAttribute("emailToReset");
 
-                response.sendRedirect("verify-code.jsp");
-            } else {
-                request.setAttribute("error", "Email không tồn tại trong hệ thống.");
-                request.getRequestDispatcher("forgot-password.jsp").forward(request, response);
+            if (expect == null || exp == null || email == null) {
+                req.setAttribute("error", "Phiên xác minh đã hết hạn. Vui lòng yêu cầu mã mới.");
+                req.getRequestDispatcher("/forgot-password.jsp").forward(req, resp);
+                return;
             }
-  
-        } else if ("verify-and-reset".equals(action)) {
-            String userCode = request.getParameter("code");
-            String newPassword = request.getParameter("newPassword");
-            
-            String sessionCode = (String) session.getAttribute("verificationCode");
-            String email = (String) session.getAttribute("emailToReset");
-
-            if (sessionCode != null && sessionCode.equals(userCode)) {
-                userDAO.updatePasswordByEmail(email, newPassword);
-                session.removeAttribute("verificationCode");
-                session.removeAttribute("emailToReset");
-                request.setAttribute("success", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
-                request.getRequestDispatcher("login.jsp").forward(request, response);
-            } else {
-                request.setAttribute("error", "Mã xác thực không đúng.");
-                request.getRequestDispatcher("verify-code.jsp").forward(request, response);
+            if (System.currentTimeMillis() > exp) {
+                req.setAttribute("error", "Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.");
+                req.setAttribute("email", email);
+                req.getRequestDispatcher("/verify-code.jsp").forward(req, resp);
+                return;
             }
-        } else {
-            response.sendRedirect("forgot-password.jsp");
+            if (!expect.equals(code)) {
+                req.setAttribute("error", "Mã OTP không đúng.");
+                req.setAttribute("email", email);
+                req.getRequestDispatcher("/verify-code.jsp").forward(req, resp);
+                return;
+            }
+            if (newPassword.length() < 8) {
+                req.setAttribute("error", "Mật khẩu mới phải từ 8 ký tự.");
+                req.setAttribute("email", email);
+                req.getRequestDispatcher("/verify-code.jsp").forward(req, resp);
+                return;
+            }
+
+            boolean ok = userDAO.updatePasswordByEmail(email, newPassword);
+            if (!ok) {
+                req.setAttribute("error", "Đổi mật khẩu thất bại. Thử lại sau.");
+                req.setAttribute("email", email);
+                req.getRequestDispatcher("/verify-code.jsp").forward(req, resp);
+                return;
+            }
+
+            // clear flags
+            session.removeAttribute("resetCode");
+            session.removeAttribute("resetExp");
+            session.removeAttribute("emailToReset");
+
+            req.setAttribute("success", "Đổi mật khẩu thành công. Mời đăng nhập.");
+            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            return;
         }
+
+        // BƯỚC 1: NHẬN EMAIL & GỬI OTP
+        String email = t(req.getParameter("email")).toLowerCase();
+        if (email.isEmpty()) {
+            req.setAttribute("error", "Vui lòng nhập email.");
+            req.getRequestDispatcher("/forgot-password.jsp").forward(req, resp);
+            return;
+        }
+
+        boolean exists;
+        try { exists = userDAO.checkEmailExists(email); }
+        catch (Throwable t) { exists = userDAO.getUserByEmail(email) != null; }
+
+        if (!exists) {
+            req.setAttribute("error", "Email không tồn tại.");
+            req.getRequestDispatcher("/forgot-password.jsp").forward(req, resp);
+            return;
+        }
+
+        String otp = genOtp();
+        // Lưu OTP + hạn 10 phút
+        session.setAttribute("resetCode", otp);
+        session.setAttribute("resetExp", System.currentTimeMillis() + 10 * 60_000);
+        session.setAttribute("emailToReset", email);
+
+        boolean sent = mailer.sendOtp(email, otp);
+        if (!sent) {
+            req.setAttribute("error", "Không gửi được email OTP. Kiểm tra cấu hình SMTP.");
+            req.getRequestDispatcher("/forgot-password.jsp").forward(req, resp);
+            return;
+        }
+
+        req.setAttribute("email", email);
+        req.setAttribute("info", "Đã gửi mã OTP vào email. Vui lòng kiểm tra hộp thư (cả Spam/Promotions).");
+        req.getRequestDispatcher("/verify-code.jsp").forward(req, resp);
     }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        request.getRequestDispatcher("forgot-password.jsp").forward(request, response);
+    private static String genOtp() {
+        return String.format("%06d", new Random().nextInt(1_000_000));
     }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
+    private static String t(String s){ return s == null ? "" : s.trim(); }
 }
