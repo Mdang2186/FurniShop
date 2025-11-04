@@ -9,11 +9,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.Random;
+import org.mindrot.jbcrypt.BCrypt; // <-- THÊM IMPORT NÀY
 
 /**
  * Khớp form:
- *  - register.jsp              (POST fullName, email, password, re_password)
- *  - verify-registration.jsp   (POST code)
+ * - register.jsp              (POST fullName, email, password, re_password)
+ * - verify-registration.jsp   (POST code)
  */
 @WebServlet(urlPatterns = {"/register"})
 public class RegisterController extends HttpServlet {
@@ -56,7 +57,8 @@ public class RegisterController extends HttpServlet {
                 return;
             }
 
-            boolean ok = userDAO.registerUser(newUser);
+            // Dòng này sẽ chạy thành công vì newUser đã đầy đủ thông tin
+            boolean ok = userDAO.registerUser(newUser); 
             if (!ok) {
                 req.setAttribute("error", "Tạo tài khoản thất bại. Thử lại sau.");
                 req.getRequestDispatcher("/register.jsp").forward(req, resp);
@@ -94,18 +96,26 @@ public class RegisterController extends HttpServlet {
             return;
         }
 
-        // Tạo user tạm (ghi DB sau khi verify OTP)
+        // === SỬA LỖI VÀ BẢO MẬT TẠI ĐÂY ===
+        
+        // 1. Mã hóa mật khẩu (Fix bảo mật)
+        String hashedPassword = BCrypt.hashpw(pass, BCrypt.gensalt());
+
+        // 2. Tạo user tạm (ghi DB sau khi verify OTP)
         User u = new User();
-        safeSet(u, "setFullName", fullName);
-        safeSet(u, "setEmail", email);
-        // tuỳ model: setPasswordHash hoặc setPassword
-        if (!safeSet(u, "setPasswordHash", pass)) {
-            safeSet(u, "setPassword", pass);
-        }
+        u.setFullName(fullName);
+        u.setEmail(email);
+        u.setPasswordHash(hashedPassword); // <-- Dùng mật khẩu đã mã hóa
+
+        // 3. Sửa lỗi NullPointerException (Fix bug)
+        u.setRole("Customer");              // <-- Gán Role mặc định
+        u.setCreatedAt(new java.util.Date()); // <-- Gán ngày tạo
+        
+        // ===================================
 
         String otp = genOtp();
         session.setAttribute("regCode", otp);
-        session.setAttribute("regExp", System.currentTimeMillis() + 10 * 60_000);
+        session.setAttribute("regExp", System.currentTimeMillis() + 10 * 60_000); // 10 phút
         session.setAttribute("newUser", u);
 
         boolean sent = mailer.sendOtp(email, otp);

@@ -24,6 +24,21 @@
                     <li class="nav-item"><a class="nav-link" href="${path}/home">Trang Chủ</a></li>
                     <li class="nav-item"><a class="nav-link" href="${path}/shop">Sản Phẩm</a></li>
                 </ul>
+
+                <%-- =================================== --%>
+                <%-- BẮT ĐẦU THANH TÌM KIẾM MỚI --%>
+                <%-- =================================== --%>
+                <form class="d-flex me-3" action="${path}/shop" method="get" role="search">
+                    <%-- Gửi từ khóa 'keyword' đến ShopController --%>
+                    <input class="form-control me-2" type="search" name="keyword" value="${keywordValue}" placeholder="Tìm sản phẩm..." aria-label="Search">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <%-- =================================== --%>
+                <%-- KẾT THÚC THANH TÌM KIẾM MỚI --%>
+                <%-- =================================== --%>
+
                 <div class="d-flex align-items-center">
                     <a href="${path}/cart" class="btn btn-light me-2 position-relative">
                         <i class="fas fa-shopping-bag"></i>

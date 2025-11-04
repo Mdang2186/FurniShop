@@ -36,23 +36,25 @@ public class ProductDAO extends DBContext {
         return product;
     }
 
+    // =========================================================================
+    // PHƯƠNG THỨC MỚI: Đếm sản phẩm để phân trang
+    // =========================================================================
     /**
-     * A powerful method to search, filter, and sort products dynamically.
-     * This is the core method for the shop and home pages.
-     * @param keyword Search term (can be null).
-     * @param categoryIds List of category IDs to filter by (can be null).
-     * @param minPrice Minimum price for filtering.
-     * @param maxPrice Maximum price for filtering.
-     * @param sortBy Sorting criteria ("newest", "price-asc", "price-desc").
-     * @return A list of products matching the criteria.
+     * Đếm tổng số sản phẩm khớp với các tiêu chí lọc.
+     * Dùng cho việc phân trang.
+     * @param keyword
+     * @param categoryIds
+     * @param minPrice
+     * @param maxPrice
+     * @return Tổng số sản phẩm (int).
      */
-    public List<Product> searchAndFilterProducts(String keyword, List<Integer> categoryIds,
-                                                 double minPrice, double maxPrice, String sortBy) {
-        List<Product> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM Products WHERE 1=1");
+    public int countProducts(String keyword, List<Integer> categoryIds,
+                             double minPrice, double maxPrice) {
+        
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Products WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        // Build WHERE clause
+        // Build WHERE clause (PHẢI GIỐNG HỆT searchAndFilterProducts)
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND ProductName LIKE ?");
             params.add("%" + keyword + "%");
@@ -74,7 +76,56 @@ public class ProductDAO extends DBContext {
             params.add(maxPrice);
         }
 
-        // Build ORDER BY clause
+        // Execute query
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1); // Trả về giá trị COUNT(*)
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error in countProducts: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    // =========================================================================
+    // PHƯƠNG THỨC ĐƯỢC CẬP NHẬT: Thêm offset và itemsPerPage
+    // =========================================================================
+    /**
+     * Sửa đổi để hỗ trợ phân trang (thêm offset và itemsPerPage).
+     */
+    public List<Product> searchAndFilterProducts(String keyword, List<Integer> categoryIds,
+                                                 double minPrice, double maxPrice, String sortBy,
+                                                 int offset, int itemsPerPage) { // <-- 2 THAM SỐ MỚI
+        List<Product> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM Products WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        // Build WHERE clause (Giữ nguyên)
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND ProductName LIKE ?");
+            params.add("%" + keyword + "%");
+        }
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            sql.append(" AND CategoryID IN (");
+            for (int i = 0; i < categoryIds.size(); i++) {
+                sql.append("?");
+                if (i < categoryIds.size() - 1) sql.append(",");
+                params.add(categoryIds.get(i));
+            }
+            sql.append(")");
+        }
+        if (maxPrice > 0 && maxPrice > minPrice) {
+            sql.append(" AND Price BETWEEN ? AND ?");
+            params.add(minPrice);
+            params.add(maxPrice);
+        }
+
+        // Build ORDER BY clause (Giữ nguyên)
         if (sortBy != null) {
             switch (sortBy) {
                 case "price-asc":
@@ -90,6 +141,11 @@ public class ProductDAO extends DBContext {
         } else {
              sql.append(" ORDER BY CreatedAt DESC"); // Default sort
         }
+        
+        // THÊM Mệnh đề phân trang (cho MySQL/MariaDB)
+        sql.append(" LIMIT ?, ?");
+        params.add(offset);
+        params.add(itemsPerPage);
 
         // Execute query
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
@@ -109,8 +165,6 @@ public class ProductDAO extends DBContext {
 
     /**
      * Helper method to fetch all image URLs for a given product ID.
-     * @param productId The ID of the product.
-     * @return A list of image URLs.
      */
     private List<String> getProductImages(int productId) {
         List<String> images = new ArrayList<>();
@@ -130,9 +184,6 @@ public class ProductDAO extends DBContext {
     
     /**
      * Helper method to map a row from the ResultSet to a Product object.
-     * @param rs The ResultSet to map from.
-     * @return An initialized Product object.
-     * @throws SQLException
      */
     private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
         Product p = new Product();

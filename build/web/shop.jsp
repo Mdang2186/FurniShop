@@ -17,6 +17,7 @@
                             <input type="text" name="keyword" id="keyword" class="form-control" value="${keywordValue}" placeholder="Tên sản phẩm...">
                         </div>
                         
+                
                         <div class="mb-4">
                             <label for="cid" class="form-label fw-bold">Danh mục</label>
                             <select name="cid" id="cid" class="form-select">
@@ -26,6 +27,7 @@
                                 </c:forEach>
                             </select>
                         </div>
+              
                         
                         <div class="mb-4">
                             <label for="sort" class="form-label fw-bold">Sắp xếp theo</label>
@@ -36,6 +38,7 @@
                             </select>
                         </div>
                         
+                   
                         <button type="submit" class="btn btn-primary w-100">Áp dụng</button>
                     </form>
                 </div>
@@ -78,6 +81,57 @@
                     </div>
                 </c:otherwise>
             </c:choose>
+
+            <%-- =================================== --%>
+            <%-- BẮT ĐẦU KHỐI MÃ PHÂN TRANG MỚI --%>
+            <%-- =================================== --%>
+            <c:if test="${totalPages > 1}">
+                <nav aria-label="Page navigation" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        
+                        <%-- Nút Lùi (Previous) --%>
+                        <c:choose>
+                            <c:when test="${currentPage > 1}">
+                                <li class="page-item">
+                                    <%-- Quan trọng: Giữ lại các tham số lọc khi chuyển trang --%>
+                                    <a class="page-link" href="shop?page=${currentPage - 1}&keyword=${keywordValue}&cid=${selectedCid}&sort=${sortByValue}">Trước</a>
+                                </li>
+                            </c:when>
+                            <c:otherwise>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">Trước</a>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <%-- Các nút số trang --%>
+                        <c:forEach begin="1" end="${totalPages}" var="i">
+                            <li class="page-item ${i == currentPage ? 'active' : ''}">
+                                <a class="page-link" href="shop?page=${i}&keyword=${keywordValue}&cid=${selectedCid}&sort=${sortByValue}">${i}</a>
+                            </li>
+                        </c:forEach>
+
+                        <%-- Nút Tới (Next) --%>
+                        <c:choose>
+                            <c:when test="${currentPage < totalPages}">
+                                <li class="page-item">
+                                    <a class="page-link" href="shop?page=${currentPage + 1}&keyword=${keywordValue}&cid=${selectedCid}&sort=${sortByValue}">Tiếp</a>
+                                </li>
+                            </c:when>
+                            <c:otherwise>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">Tiếp</a>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
+                        
+                    </ul>
+                </nav>
+            </c:if>
+            <%-- =================================== --%>
+            <%-- KẾT THÚC KHỐI MÃ PHÂN TRANG --%>
+            <%-- =================================== --%>
+
         </div>
     </div>
 </main>
