@@ -3,120 +3,161 @@ package controller;
 import dal.OrderDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import model.CartItem;
 import model.Order;
 import model.OrderItem;
+import model.Product;
 import model.User;
 
 @WebServlet(name = "CheckoutController", urlPatterns = {"/checkout"})
 public class CheckoutController extends HttpServlet {
 
-    /**
-     * Hiển thị trang thanh toán.
-     * Kiểm tra các điều kiện: người dùng phải đăng nhập và giỏ hàng không được rỗng.
-     */
+    // --- GET: hiển thị trang checkout (ép đăng nhập) ---
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("account");
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cart");
 
-        // Bắt buộc đăng nhập để đặt hàng
+        HttpSession ss = req.getSession(true);
+        User user = (User) ss.getAttribute("account");
+        String ctx = req.getContextPath();
+
+        // ép login
         if (user == null) {
-            response.sendRedirect("login");
+            String returnUrl = "/checkout";
+            String sel = req.getParameter("sel");
+            if (sel != null && !sel.isBlank()) {
+                returnUrl += "?sel=" + URLEncoder.encode(sel, StandardCharsets.UTF_8);
+            }
+            ss.setAttribute("returnUrl", returnUrl);
+            resp.sendRedirect(ctx + "/login");
             return;
         }
 
-        // Không cho phép vào trang thanh toán nếu giỏ hàng trống
+        @SuppressWarnings("unchecked")
+        List<CartItem> cart = (List<CartItem>) ss.getAttribute("cart");
         if (cart == null || cart.isEmpty()) {
-            response.sendRedirect("cart");
+            resp.sendRedirect(ctx + "/cart");
             return;
         }
 
-        // Mọi thứ hợp lệ, hiển thị trang checkout
-        request.getRequestDispatcher("checkout.jsp").forward(request, response);
+        // lọc item đã chọn (nếu có sel), còn không thì lấy hết
+        Set<Integer> chosen = parseSel(req.getParameter("sel"));
+        List<CartItem> items = new ArrayList<>();
+        for (CartItem it : cart) {
+            Product p = it.getProduct();
+            if (chosen.isEmpty() || chosen.contains(p.getProductID())) items.add(it);
+        }
+        if (items.isEmpty()) { // chặn submit trắng
+            resp.sendRedirect(ctx + "/cart");
+            return;
+        }
+
+        double sub = 0;
+        for (CartItem it : items) sub += it.getTotalPrice();
+
+        req.setAttribute("sel", req.getParameter("sel")); // preserve để POST
+        req.setAttribute("items", items);
+        req.setAttribute("subTotal", sub);
+        req.setAttribute("grandTotal", sub);
+        // gợi ý data user
+        req.setAttribute("fullName", user.getFullName());
+        req.setAttribute("address", user.getAddress());
+        req.setAttribute("phone", user.getPhone());
+
+        req.getRequestDispatcher("checkout.jsp").forward(req, resp);
     }
 
-    /**
-     * Xử lý việc xác nhận đơn hàng.
-     * Lấy thông tin từ form, tạo đối tượng Order và lưu vào cơ sở dữ liệu.
-     */
+    // --- POST: tạo đơn hàng ---
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html;charset=UTF-8");
-        HttpSession session = request.getSession();
-        
-        User user = (User) session.getAttribute("account");
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cart");
-        
-        // Kiểm tra lại các điều kiện an toàn
-        if (user == null || cart == null || cart.isEmpty()) {
-            response.sendRedirect("home");
+        req.setCharacterEncoding("UTF-8");
+        HttpSession ss = req.getSession(true);
+        User user = (User) ss.getAttribute("account");
+        String ctx = req.getContextPath();
+
+        if (user == null) { resp.sendRedirect(ctx + "/login"); return; }
+
+        @SuppressWarnings("unchecked")
+        List<CartItem> cart = (List<CartItem>) ss.getAttribute("cart");
+        if (cart == null || cart.isEmpty()) { resp.sendRedirect(ctx + "/cart"); return; }
+
+        Set<Integer> chosen = parseSel(req.getParameter("sel"));
+        List<CartItem> items = new ArrayList<>();
+        for (CartItem it : cart) {
+            if (chosen.isEmpty() || chosen.contains(it.getProduct().getProductID())) items.add(it);
+        }
+        if (items.isEmpty()) {
+            req.setAttribute("error", "Chưa chọn sản phẩm hợp lệ.");
+            doGet(req, resp);
             return;
         }
 
-        try {
-            // Lấy thông tin từ form
-            String fullName = request.getParameter("fullName");
-            String phone = request.getParameter("phone");
-            String address = request.getParameter("address");
-            String paymentMethod = request.getParameter("paymentMethod");
-            String note = request.getParameter("note");
-            
-            // Tạo đối tượng Order từ thông tin thu thập được
-            Order order = new Order();
-            order.setUserID(user.getUserID());
-            order.setTotalAmount((Double) session.getAttribute("totalAmount"));
-            // Kết hợp thông tin người nhận vào địa chỉ để lưu trữ
-            String shippingInfo = String.format("%s - %s, %s", fullName, phone, address);
-            order.setShippingAddress(shippingInfo);
-            order.setPaymentMethod(paymentMethod);
-            order.setNote(note);
+        String fullName = n(req.getParameter("fullName"));
+        String phone     = n(req.getParameter("phone"));
+        String address   = n(req.getParameter("address"));
+        String payment   = n(req.getParameter("paymentMethod"));
+        String note      = n(req.getParameter("note"));
 
-            // Chuyển đổi các CartItem trong giỏ hàng thành OrderItem
-            List<OrderItem> orderItems = new ArrayList<>();
-            for (CartItem cItem : cart) {
-                OrderItem oItem = new OrderItem();
-                oItem.setProductID(cItem.getProduct().getProductID());
-                oItem.setQuantity(cItem.getQuantity());
-                oItem.setUnitPrice(cItem.getProduct().getPrice());
-                orderItems.add(oItem);
-            }
-            order.setItems(orderItems);
-            
-            // Gọi DAO để thực hiện lưu đơn hàng vào CSDL
-            OrderDAO orderDAO = new OrderDAO();
-            boolean success = orderDAO.createOrder(order);
-            
-            if(success) {
-                // Xóa giỏ hàng khỏi session sau khi đặt hàng thành công
-                session.removeAttribute("cart");
-                session.removeAttribute("cartSize");
-                session.removeAttribute("totalAmount");
-                
-                // Gửi thông báo và chuyển hướng đến trang lịch sử đơn hàng
-                request.setAttribute("message", "Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại Furni Shop.");
-                request.getRequestDispatcher("orders").forward(request, response);
-            } else {
-                // Nếu có lỗi, hiển thị lại trang checkout với thông báo lỗi
-                request.setAttribute("error", "Đã có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.");
-                request.getRequestDispatcher("checkout.jsp").forward(request, response);
-            }
-        } catch (Exception e) {
-            System.out.println("CheckoutController doPost Error: " + e.getMessage());
-            request.setAttribute("error", "Hệ thống đã gặp lỗi. Xin lỗi vì sự bất tiện này.");
-            request.getRequestDispatcher("checkout.jsp").forward(request, response);
+        if (fullName.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+            req.setAttribute("error", "Vui lòng điền đầy đủ họ tên, số điện thoại và địa chỉ.");
+            doGet(req, resp);
+            return;
         }
+
+        double total = 0;
+        List<OrderItem> oi = new ArrayList<>();
+        for (CartItem it : items) {
+            total += it.getTotalPrice();
+            OrderItem row = new OrderItem();
+            row.setProductID(it.getProduct().getProductID());
+            row.setQuantity(it.getQuantity());
+            row.setUnitPrice(it.getProduct().getPrice());
+            oi.add(row);
+        }
+
+        Order order = new Order();
+        order.setUserID(user.getUserID());
+        order.setTotalAmount(total);
+        order.setPaymentMethod(payment.isEmpty() ? "COD" : payment);
+        order.setShippingAddress(fullName + " - " + phone + ", " + address);
+        order.setNote(note);
+        order.setItems(oi);
+
+        boolean ok = new OrderDAO().createOrder(order);
+        if (!ok) {
+            req.setAttribute("error", "Có lỗi khi tạo đơn hàng. Vui lòng thử lại.");
+            doGet(req, resp);
+            return;
+        }
+
+        // dọn các item đã đặt khỏi giỏ
+        if (chosen.isEmpty()) cart.clear();
+        else cart.removeIf(it -> chosen.contains(it.getProduct().getProductID()));
+        recalcSessionTotals(ss, cart);
+
+        resp.sendRedirect(ctx + "/orders");
     }
+
+    private static Set<Integer> parseSel(String sel) {
+        Set<Integer> ids = new HashSet<>();
+        if (sel == null || sel.isBlank()) return ids;
+        for (String s : sel.split(",")) {
+            try { ids.add(Integer.parseInt(s.trim())); } catch (Exception ignore) {}
+        }
+        return ids;
+        }
+    private static void recalcSessionTotals(HttpSession ss, List<CartItem> cart) {
+        double total = 0; int size = 0;
+        for (CartItem it : cart) { total += it.getTotalPrice(); size += it.getQuantity(); }
+        ss.setAttribute("totalAmount", total);
+        ss.setAttribute("cartSize", size);
+        ss.setAttribute("cart", cart);
+    }
+    private static String n(String s){ return s==null? "": s.trim(); }
 }

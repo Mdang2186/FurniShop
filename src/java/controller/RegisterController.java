@@ -3,19 +3,15 @@ package controller;
 import Utils.EmailService;
 import dal.UserDAO;
 import model.User;
+import org.mindrot.jbcrypt.BCrypt;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Random;
-import org.mindrot.jbcrypt.BCrypt; // <-- THÊM IMPORT NÀY
 
-/**
- * Khớp form:
- * - register.jsp              (POST fullName, email, password, re_password)
- * - verify-registration.jsp   (POST code)
- */
 @WebServlet(urlPatterns = {"/register"})
 public class RegisterController extends HttpServlet {
     private final UserDAO userDAO = new UserDAO();
@@ -24,24 +20,51 @@ public class RegisterController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        // Nếu đang có phiên đăng ký dở (đã gửi OTP) thì hiển thị trang verify
+        if (req.getSession().getAttribute("newUser") != null) {
+            req.getRequestDispatcher("/verify-registration.jsp").forward(req, resp);
+            return;
+        }
         req.getRequestDispatcher("/register.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(true);
+
+        // RESEND OTP
+        if ("1".equals(req.getParameter("resend"))) {
+            String email = (String) session.getAttribute("regEmail");
+            User newUser = (User) session.getAttribute("newUser");
+            if (newUser == null || email == null) {
+                req.setAttribute("error", "Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.");
+                req.getRequestDispatcher("/register.jsp").forward(req, resp);
+                return;
+            }
+            String otp = genOtp();
+            session.setAttribute("regCode", otp);
+            session.setAttribute("regExp", System.currentTimeMillis() + 10 * 60_000);
+            mailer.sendOtp(email, otp);
+            req.setAttribute("email", email);
+            req.setAttribute("info", "Đã gửi lại mã xác minh vào email.");
+            req.getRequestDispatcher("/verify-registration.jsp").forward(req, resp);
+            return;
+        }
 
         // BƯỚC 2: XÁC MINH OTP
         String code = t(req.getParameter("code"));
         if (!code.isEmpty()) {
+            if (!code.matches("\\d{6}")) {
+                req.setAttribute("error", "Mã OTP phải gồm đúng 6 chữ số.");
+                req.getRequestDispatcher("/verify-registration.jsp").forward(req, resp);
+                return;
+            }
             String regCode = (String) session.getAttribute("regCode");
             Long   regExp  = (Long)   session.getAttribute("regExp");
-            User newUser   = (User)   session.getAttribute("newUser");
-
-            if (regCode == null || regExp == null || newUser == null) {
+            User   newUser = (User)   session.getAttribute("newUser");
+            if (newUser == null || regCode == null || regExp == null) {
                 req.setAttribute("error", "Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.");
                 req.getRequestDispatcher("/register.jsp").forward(req, resp);
                 return;
@@ -57,17 +80,22 @@ public class RegisterController extends HttpServlet {
                 return;
             }
 
-            // Dòng này sẽ chạy thành công vì newUser đã đầy đủ thông tin
-            boolean ok = userDAO.registerUser(newUser); 
+            // Lưu DB
+            boolean ok = userDAO.registerUser(newUser);
             if (!ok) {
-                req.setAttribute("error", "Tạo tài khoản thất bại. Thử lại sau.");
+                req.setAttribute("error", "Không thể tạo tài khoản lúc này. Thử lại sau.");
                 req.getRequestDispatcher("/register.jsp").forward(req, resp);
                 return;
             }
 
+            // Clear session tạm
+            session.removeAttribute("newUser");
             session.removeAttribute("regCode");
             session.removeAttribute("regExp");
-            session.removeAttribute("newUser");
+            session.removeAttribute("regEmail");
+
+            // (tuỳ chọn) gửi email chào mừng
+            mailer.sendWelcome(newUser.getEmail(), newUser.getFullName());
 
             req.setAttribute("success", "Đăng ký thành công. Mời đăng nhập.");
             req.getRequestDispatcher("/login.jsp").forward(req, resp);
@@ -85,6 +113,11 @@ public class RegisterController extends HttpServlet {
             req.getRequestDispatcher("/register.jsp").forward(req, resp);
             return;
         }
+        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            req.setAttribute("error", "Email không hợp lệ.");
+            req.getRequestDispatcher("/register.jsp").forward(req, resp);
+            return;
+        }
         if (!pass.equals(rePass)) {
             req.setAttribute("error", "Xác nhận mật khẩu không khớp.");
             req.getRequestDispatcher("/register.jsp").forward(req, resp);
@@ -96,37 +129,31 @@ public class RegisterController extends HttpServlet {
             return;
         }
 
-        // === SỬA LỖI VÀ BẢO MẬT TẠI ĐÂY ===
-        
-        // 1. Mã hóa mật khẩu (Fix bảo mật)
-        String hashedPassword = BCrypt.hashpw(pass, BCrypt.gensalt());
+        // Hash BCrypt (đồng bộ với LoginController đã fallback BCrypt)
+        String hash = BCrypt.hashpw(pass, BCrypt.gensalt(10));
 
-        // 2. Tạo user tạm (ghi DB sau khi verify OTP)
         User u = new User();
         u.setFullName(fullName);
         u.setEmail(email);
-        u.setPasswordHash(hashedPassword); // <-- Dùng mật khẩu đã mã hóa
-
-        // 3. Sửa lỗi NullPointerException (Fix bug)
-        u.setRole("Customer");              // <-- Gán Role mặc định
-        u.setCreatedAt(new java.util.Date()); // <-- Gán ngày tạo
-        
-        // ===================================
+        u.setPasswordHash(hash);
+        u.setRole("Customer");
+        u.setCreatedAt(new Date());
 
         String otp = genOtp();
-        session.setAttribute("regCode", otp);
-        session.setAttribute("regExp", System.currentTimeMillis() + 10 * 60_000); // 10 phút
         session.setAttribute("newUser", u);
+        session.setAttribute("regCode", otp);
+        session.setAttribute("regExp", System.currentTimeMillis() + 10 * 60_000);
+        session.setAttribute("regEmail", email);
 
         boolean sent = mailer.sendOtp(email, otp);
         if (!sent) {
-            req.setAttribute("error", "Không gửi được email OTP. Kiểm tra cấu hình SMTP.");
+            req.setAttribute("error", "Không gửi được email OTP. Kiểm tra cấu hình SMTP (App Password).");
             req.getRequestDispatcher("/register.jsp").forward(req, resp);
             return;
         }
 
         req.setAttribute("email", email);
-        req.setAttribute("info", "Đã gửi mã xác minh vào email. Vui lòng kiểm tra hộp thư.");
+        req.setAttribute("info", "Đã gửi mã xác minh vào email. Vui lòng kiểm tra hộp thư (kể cả Spam).");
         req.getRequestDispatcher("/verify-registration.jsp").forward(req, resp);
     }
 
@@ -134,10 +161,4 @@ public class RegisterController extends HttpServlet {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
     private static String t(String s){ return s == null ? "" : s.trim(); }
-
-    /** Gọi setter bằng reflection để không phụ thuộc tên trường cụ thể trong model.User */
-    private static boolean safeSet(Object target, String setter, String val) {
-        try { target.getClass().getMethod(setter, String.class).invoke(target, val); return true; }
-        catch (Exception e) { return false; }
-    }
 }

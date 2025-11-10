@@ -2,101 +2,81 @@ package controller;
 
 import dal.CategoryDAO;
 import dal.ProductDAO;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import model.Category;
 import model.Product;
+import model.Category;
 
-@WebServlet(name = "ShopController", urlPatterns = {"/shop"})
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import jakarta.servlet.annotation.WebServlet;
+import java.io.IOException;
+import java.util.*;
+
+@WebServlet(name="ShopController", urlPatterns={"/shop"})
 public class ShopController extends HttpServlet {
+    private static final int ITEMS_PER_PAGE = 12;
 
-    // Đặt số lượng sản phẩm mỗi trang ở đây
-    private static final int ITEMS_PER_PAGE = 9;
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            // ---- Params
+            String keyword = trim(req.getParameter("keyword"));
+            String cidParam = trim(req.getParameter("cid"));     // "all" | number
+            String sort     = Optional.ofNullable(req.getParameter("sort")).orElse("newest");
+            int page        = parseInt(req.getParameter("page"), 1);
+            double min      = parseDouble(req.getParameter("min"), 0);
+            double max      = parseDouble(req.getParameter("max"), 0);
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        ProductDAO pdao = new ProductDAO();
-        CategoryDAO cdao = new CategoryDAO();
-
-        // Lấy các tham số lọc, tìm kiếm VÀ trang
-        String keyword = request.getParameter("keyword");
-        String categoryId_raw = request.getParameter("cid");
-        String sortBy = request.getParameter("sort");
-        String page_raw = request.getParameter("page"); // <-- Lấy tham số trang
-
-        // Chuẩn bị danh sách category ID để lọc
-        List<Integer> categoryIds = new ArrayList<>();
-        if (categoryId_raw != null && !categoryId_raw.isEmpty() && !categoryId_raw.equals("all")) {
-            try {
-                categoryIds.add(Integer.parseInt(categoryId_raw));
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid category ID format: " + categoryId_raw);
+            // ---- Category parse
+            int selectedCidInt = -1;                // -1 = all
+            if (cidParam != null && !"all".equalsIgnoreCase(cidParam)) {
+                selectedCidInt = parseInt(cidParam, -1);
             }
-        }
-        
-        // Đặt giá trị sắp xếp mặc định
-        if (sortBy == null || sortBy.isEmpty()) {
-            sortBy = "newest"; 
-        }
-
-        // === BẮT ĐẦU LOGIC PHÂN TRANG ===
-        
-        // 1. Xử lý trang hiện tại
-        int currentPage = 1;
-        if (page_raw != null) {
-            try {
-                currentPage = Integer.parseInt(page_raw);
-                if (currentPage < 1) {
-                    currentPage = 1;
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid page format: " + page_raw);
-                currentPage = 1;
+            List<Integer> categoryIds = null;
+            if (selectedCidInt > 0) {
+                categoryIds = Collections.singletonList(selectedCidInt);
             }
+
+            // ---- DAO
+            ProductDAO pdao = new ProductDAO();
+            CategoryDAO cdao = new CategoryDAO();
+
+            int totalCount = pdao.countProducts(keyword, categoryIds, min, max);
+            int totalPages = Math.max(1, (int)Math.ceil(totalCount / (double)ITEMS_PER_PAGE));
+            page = Math.min(Math.max(1, page), totalPages);
+            int offset = (page - 1) * ITEMS_PER_PAGE;
+
+            List<Product> products = pdao.searchAndFilterProducts(
+                    keyword, categoryIds, min, max, sort, offset, ITEMS_PER_PAGE);
+
+            List<Category> categories = cdao.getAllCategories(); // <— NHỚ SET
+
+            // ---- Attributes cho JSP
+            req.setAttribute("products", products);
+            req.setAttribute("categories", categories);
+
+            req.setAttribute("keywordValue", keyword);
+            req.setAttribute("selectedCid", cidParam == null ? "all" : cidParam);
+            req.setAttribute("selectedCidInt", selectedCidInt);
+            req.setAttribute("minValue", min);
+            req.setAttribute("maxValue", max);
+            req.setAttribute("sortByValue", sort);
+
+            req.setAttribute("totalCount", totalCount);
+            req.setAttribute("totalPages", totalPages);
+            req.setAttribute("currentPage", page);
+            req.setAttribute("pageSize", ITEMS_PER_PAGE);
+
+            req.getRequestDispatcher("/shop.jsp").forward(req, resp);
+        } catch (Exception ex) {
+            // log + fallback
+            ex.printStackTrace();
+            req.setAttribute("error", "Không tải được danh sách sản phẩm.");
+            req.getRequestDispatcher("/error.jsp").forward(req, resp);
         }
-
-        // 2. Lấy tổng số sản phẩm (từ phương thức DAO mới)
-        int totalItems = pdao.countProducts(keyword, categoryIds, 0, 0);
-
-        // 3. Tính toán tổng số trang
-        int totalPages = (int) Math.ceil((double) totalItems / ITEMS_PER_PAGE);
-        
-        // Đảm bảo trang hiện tại không vượt quá tổng số trang
-        if (currentPage > totalPages && totalPages > 0) {
-            currentPage = totalPages;
-        }
-
-        // 4. Tính toán offset
-        int offset = (currentPage - 1) * ITEMS_PER_PAGE;
-        
-        // === KẾT THÚC LOGIC PHÂN TRANG ===
-
-
-        // Gọi phương thức DAO đã sửa đổi (với offset và itemsPerPage)
-        List<Product> productList = pdao.searchAndFilterProducts(keyword, categoryIds, 0, 0, sortBy, offset, ITEMS_PER_PAGE);
-        
-        // Lấy tất cả danh mục để hiển thị trên bộ lọc
-        List<Category> categoryList = cdao.getAllCategories();
-        
-        // Đặt các thuộc tính vào request để JSP có thể truy cập
-        request.setAttribute("products", productList);
-        request.setAttribute("categories", categoryList);
-        
-        // Gửi lại các giá trị đã chọn
-        request.setAttribute("selectedCid", categoryId_raw);
-        request.setAttribute("keywordValue", keyword);
-        request.setAttribute("sortByValue", sortBy);
-        
-        // Gửi thông tin phân trang sang JSP
-        request.setAttribute("totalPages", totalPages);
-        request.setAttribute("currentPage", currentPage);
-        
-        // Chuyển tiếp đến trang JSP
-        request.getRequestDispatcher("shop.jsp").forward(request, response);
     }
+
+    // helpers
+    private String trim(String s){ return (s==null)?null:s.trim(); }
+    private int parseInt(String s, int def){ try{ return Integer.parseInt(s); }catch(Exception e){ return def; } }
+    private double parseDouble(String s, double def){ try{ return Double.parseDouble(s); }catch(Exception e){ return def; } }
 }

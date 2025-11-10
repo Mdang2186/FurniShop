@@ -7,55 +7,59 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import model.Product;
 
-@WebServlet(name = "HomeController", urlPatterns = {"/home", ""}) // Ánh xạ cả /home và trang gốc
+@WebServlet(name = "HomeController", urlPatterns = {"/home", ""})
 public class HomeController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Đảm bảo ký tự tiếng Việt hiển thị chính xác
         response.setContentType("text/html;charset=UTF-8");
         
         try {
-            ProductDAO pdao = new ProductDAO();
+            ProductDAO pdao = new ProductDAO(); //
             
-            // TỐI ƯU: Chỉ lấy 8 sản phẩm mới nhất cho trang chủ
-            // Sử dụng phương thức searchAndFilterProducts đã cập nhật với phân trang
-            int offset = 0; // Bắt đầu từ sản phẩm đầu tiên
-            int itemsPerPage = 8; // Chỉ lấy 8 sản phẩm
+            // === LẤY DỮ LIỆU CHO TRANG "LUXE" ===
+
+            // 1. Lấy 8 sản phẩm MỚI NHẤT (cho ${products} - "Bộ sưu tập đặc biệt")
+            //
+            List<Product> newestProducts = pdao.getNewArrivals(8); 
             
-            List<Product> products = pdao.searchAndFilterProducts(
-                    null,            // keyword (không có)
-                    new ArrayList<>(), // categoryIds (không có)
-                    0,               // minPrice
-                    0,               // maxPrice
-                    "newest",        // sortBy (mới nhất)
-                    offset,          // offset (bắt đầu từ 0)
-                    itemsPerPage     // itemsPerPage (giới hạn 8)
-            );
+            // 2. Lấy 4 sản phẩm BÁN CHẠY (cho ${bestSellersEx} - "Bán chạy")
+            // Trang home.jsp mới dùng 'bestSellersEx' và 'it.sold'
+            // Chúng ta sẽ dùng 30 ngày làm mốc
+            //
+            List<ProductDAO.ProductSold> bestSellingProducts = pdao.getBestSellersWithSold(4, 30); 
             
-            // Gửi danh sách sản phẩm (chỉ 8 sản phẩm) sang home.jsp
-            request.setAttribute("products", products);
-            request.getRequestDispatcher("home.jsp").forward(request, response);
+            // 3. Lấy 1 sản phẩm ĐẶC BIỆT (cho ${specialProduct})
+            // Lấy tạm sản phẩm có ID = 1 (hoặc một ID nào đó bạn chắc chắn có)
+            Product specialProduct = pdao.getProductByID(1); //
+
+            // 4. Gửi tất cả dữ liệu sang JSP
+            // Gửi "products" cho phần "Bộ sưu tập đặc biệt"
+            request.setAttribute("products", newestProducts); 
+            
+            // Gửi "bestSellersEx" cho phần "Bán chạy"
+            request.setAttribute("bestSellersEx", bestSellingProducts); 
+            
+            // Gửi "specialProduct" cho "Sản phẩm nghệ thuật"
+            request.setAttribute("specialProduct", specialProduct); 
+            
+            request.getRequestDispatcher("home.jsp").forward(request, response); //
             
         } catch (Exception e) {
-            // Ghi lại lỗi để dễ dàng gỡ rối
-            System.out.println("HomeController doGet Error: " + e.getMessage());
-            // Có thể chuyển hướng đến một trang lỗi chung
-            response.sendRedirect("error.jsp"); 
+            System.out.println("HomeController doGet Error: " + e.getMessage()); //
+            e.printStackTrace(); //
+            response.sendRedirect("error.jsp"); //
         }
     }
     
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Thông thường trang chủ không xử lý POST, nhưng để an toàn,
-        // bạn có thể cho nó gọi doGet
-        doGet(request, response);
+        doGet(request, response); //
     }
 }
