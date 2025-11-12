@@ -3,11 +3,9 @@ package controller;
 import dal.OrderDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import model.Order;
 import model.User;
@@ -18,13 +16,18 @@ public class OrderHistoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("account");
 
-        // Yêu cầu đăng nhập
+        request.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html;charset=UTF-8");
+
+        HttpSession session = request.getSession(true);
+        User user = (User) session.getAttribute("account");
+        String ctx = request.getContextPath();
+
+        // ÉP ĐĂNG NHẬP + LƯU RETURN URL
         if (user == null) {
-            response.sendRedirect("login");
+            session.setAttribute("returnUrl", "/orders");
+            response.sendRedirect(ctx + "/login");
             return;
         }
 
@@ -34,12 +37,14 @@ public class OrderHistoryController extends HttpServlet {
             request.setAttribute("orderList", orderList);
             request.getRequestDispatcher("orders.jsp").forward(request, response);
         } catch (Exception e) {
-            System.out.println("OrderHistoryController doGet Error: " + e.getMessage());
-            response.sendRedirect("error.jsp");
+            e.printStackTrace();
+            request.setAttribute("error", "Không tải được lịch sử đơn hàng. Vui lòng thử lại sau.");
+            request.setAttribute("orderList", Collections.emptyList());
+            request.getRequestDispatcher("orders.jsp").forward(request, response);
         }
     }
-    
-    // doPost có thể được dùng để xử lý các hành động như hủy đơn hàng trong tương lai
+
+    // Sau này có hủy đơn… vẫn dùng GET để hiển thị lại
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

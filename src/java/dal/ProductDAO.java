@@ -1,32 +1,38 @@
 package dal;
 
+import model.Product;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import model.Product;
 
 /**
  * Handles all database operations related to the Products table.
  */
 public class ProductDAO extends DBContext {
 
-    /**
-     * Fetches a single product by its ID, including all its associated images.
-     * @param id The ID of the product to retrieve.
-     * @return A Product object with all details, or null if not found.
-     */
+    /* ========= Connection helper ========= */
+    private Connection requireConn() throws SQLException {
+        if (this.connection == null || this.connection.isClosed()) {
+            this.connection = new DBContext().connection;
+        }
+        return this.connection;
+    }
+
+    /* ========= Single / Detail ========= */
     public Product getProductByID(int id) {
-        String sql = "SELECT * FROM Products WHERE ProductID = ?";
+        // (Giữ nguyên code)
+        final String sql = "SELECT * FROM Products WHERE ProductID = ?";
         Product product = null;
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
+        try (PreparedStatement st = requireConn().prepareStatement(sql)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    // Map main product details
                     product = mapResultSetToProduct(rs);
-                    // Fetch the list of all associated images (main + detail)
                     product.setImageUrls(getProductImages(id));
                 }
             }
@@ -36,122 +42,39 @@ public class ProductDAO extends DBContext {
         return product;
     }
 
-    // =========================================================================
-    // PHƯƠNG THỨC MỚI: Đếm sản phẩm để phân trang
-    // =========================================================================
-    /**
-     * Đếm tổng số sản phẩm khớp với các tiêu chí lọc.
-     * Dùng cho việc phân trang.
-     * @param keyword
-     * @param categoryIds
-     * @param minPrice
-     * @param maxPrice
-     * @return Tổng số sản phẩm (int).
-     */
-    public int countProducts(String keyword, List<Integer> categoryIds,
-                             double minPrice, double maxPrice) {
-        
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Products WHERE 1=1");
-        List<Object> params = new ArrayList<>();
-
-        // Build WHERE clause (PHẢI GIỐNG HỆT searchAndFilterProducts)
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND ProductName LIKE ?");
-            params.add("%" + keyword + "%");
-        }
-
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            sql.append(" AND CategoryID IN (");
-            for (int i = 0; i < categoryIds.size(); i++) {
-                sql.append("?");
-                if (i < categoryIds.size() - 1) sql.append(",");
-                params.add(categoryIds.get(i));
-            }
-            sql.append(")");
-        }
-
-        if (maxPrice > 0 && maxPrice > minPrice) {
-            sql.append(" AND Price BETWEEN ? AND ?");
-            params.add(minPrice);
-            params.add(maxPrice);
-        }
-
-        // Execute query
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                st.setObject(i + 1, params.get(i));
-            }
-            try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1); // Trả về giá trị COUNT(*)
+    public List<Product> findRelated(int categoryId, int excludeProductId, int limit) throws SQLException {
+        // (Giữ nguyên code)
+        String sql = "SELECT * FROM Products WHERE CategoryID=? AND ProductID<>? ORDER BY CreatedAt DESC LIMIT ?";
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            ps.setInt(1, categoryId);
+            ps.setInt(2, excludeProductId);
+            ps.setInt(3, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
                 }
             }
-        } catch (SQLException e) {
-            System.out.println("Error in countProducts: " + e.getMessage());
         }
-        return 0;
+        return list;
     }
 
-    // =========================================================================
-    // PHƯƠNG THỨC ĐƯỢC CẬP NHẬT: Thêm offset và itemsPerPage
-    // =========================================================================
+    /* ========= Search / Filter / Sort ========= */
+    
     /**
-     * Sửa đổi để hỗ trợ phân trang (thêm offset và itemsPerPage).
+     * THAY ĐỔI: Thêm 'brandName' vào phương thức
      */
     public List<Product> searchAndFilterProducts(String keyword, List<Integer> categoryIds,
-                                                 double minPrice, double maxPrice, String sortBy,
-                                                 int offset, int itemsPerPage) { // <-- 2 THAM SỐ MỚI
-        List<Product> list = new ArrayList<>();
+            double minPrice, double maxPrice, String sortBy, String brandName) {
         StringBuilder sql = new StringBuilder("SELECT * FROM Products WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        // Build WHERE clause (Giữ nguyên)
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND ProductName LIKE ?");
-            params.add("%" + keyword + "%");
-        }
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            sql.append(" AND CategoryID IN (");
-            for (int i = 0; i < categoryIds.size(); i++) {
-                sql.append("?");
-                if (i < categoryIds.size() - 1) sql.append(",");
-                params.add(categoryIds.get(i));
-            }
-            sql.append(")");
-        }
-        if (maxPrice > 0 && maxPrice > minPrice) {
-            sql.append(" AND Price BETWEEN ? AND ?");
-            params.add(minPrice);
-            params.add(maxPrice);
-        }
+        buildWhere(sql, params, keyword, categoryIds, minPrice, maxPrice, brandName); // <-- Đã thêm brandName
+        appendOrderBy(sql, sortBy);
 
-        // Build ORDER BY clause (Giữ nguyên)
-        if (sortBy != null) {
-            switch (sortBy) {
-                case "price-asc":
-                    sql.append(" ORDER BY Price ASC");
-                    break;
-                case "price-desc":
-                    sql.append(" ORDER BY Price DESC");
-                    break;
-                default: // "newest"
-                    sql.append(" ORDER BY CreatedAt DESC");
-                    break;
-            }
-        } else {
-             sql.append(" ORDER BY CreatedAt DESC"); // Default sort
-        }
-        
-        // THÊM Mệnh đề phân trang (cho MySQL/MariaDB)
-        sql.append(" LIMIT ?, ?");
-        params.add(offset);
-        params.add(itemsPerPage);
-
-        // Execute query
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                st.setObject(i + 1, params.get(i));
-            }
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement st = requireConn().prepareStatement(sql.toString())) {
+            bindParams(st, params);
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapResultSetToProduct(rs));
@@ -164,15 +87,229 @@ public class ProductDAO extends DBContext {
     }
 
     /**
-     * Helper method to fetch all image URLs for a given product ID.
+     * THAY ĐỔI: Thêm 'brandName' vào phương thức
      */
+    public List<Product> searchAndFilterProducts(String keyword, List<Integer> categoryIds,
+            double minPrice, double maxPrice, String sortBy,
+            int offset, int pageSize, String brandName) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM Products WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        buildWhere(sql, params, keyword, categoryIds, minPrice, maxPrice, brandName); // <-- Đã thêm brandName
+        appendOrderBy(sql, sortBy);
+
+        sql.append(" LIMIT ?, ?");
+        params.add(Math.max(0, offset));
+        params.add(Math.max(1, pageSize));
+
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement st = requireConn().prepareStatement(sql.toString())) {
+            bindParams(st, params);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error in searchAndFilterProducts(paged): " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * THAY ĐỔI: Thêm 'brandName' vào phương thức
+     */
+    public int countProducts(String keyword, List<Integer> categoryIds, double minPrice, double maxPrice, String brandName) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Products WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+        buildWhere(sql, params, keyword, categoryIds, minPrice, maxPrice, brandName); // <-- Đã thêm brandName
+
+        try (PreparedStatement st = requireConn().prepareStatement(sql.toString())) {
+            bindParams(st, params);
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error in countProducts: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    /* ========= PHƯƠNG THỨC MỚI: Lấy danh sách Thương hiệu ========= */
+    
+    /**
+     * Lấy tất cả các thương hiệu (distinct) để hiển thị trong bộ lọc.
+     */
+    public List<String> getDistinctBrands() {
+        List<String> brands = new ArrayList<>();
+        String sql = "SELECT DISTINCT Brand FROM Products WHERE Brand IS NOT NULL AND Brand != '' ORDER BY Brand ASC";
+        try (PreparedStatement st = requireConn().prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                brands.add(rs.getString("Brand"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error in getDistinctBrands: " + e.getMessage());
+        }
+        return brands;
+    }
+
+    /* ========= Home sections (Giữ nguyên) ========= */
+    
+    public List<Product> getNewArrivals(int limit) throws SQLException {
+        // (Giữ nguyên code)
+        String sql = "SELECT * FROM Products WHERE Stock>0 ORDER BY CreatedAt DESC LIMIT ?";
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<Product> getBestSellers(int limit, int days) throws SQLException {
+        // (Giữ nguyên code)
+        String sql
+                = "SELECT p.* FROM Products p "
+                + "JOIN OrderItems oi ON oi.ProductID = p.ProductID "
+                + "JOIN Orders o ON o.OrderID = oi.OrderID "
+                + "WHERE o.OrderDate >= DATE_SUB(NOW(), INTERVAL ? DAY) "
+                + "GROUP BY p.ProductID "
+                + "ORDER BY SUM(oi.Quantity) DESC "
+                + "LIMIT ?";
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            ps.setInt(1, days);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+    
+    // (Giữ nguyên các phương thức getTrending, getSeasonalByCategory...)
+    public List<Product> getTrending(int limit, int days) throws SQLException {
+        String sql
+                = "SELECT p.* FROM Products p "
+                + "LEFT JOIN OrderItems oi ON oi.ProductID = p.ProductID "
+                + "LEFT JOIN Orders o ON o.OrderID = oi.OrderID "
+                + "WHERE (o.OrderDate >= DATE_SUB(NOW(), INTERVAL ? DAY) "
+                + "   OR  p.CreatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)) "
+                + "GROUP BY p.ProductID "
+                + "ORDER BY COALESCE(SUM(oi.Quantity),0) DESC, p.CreatedAt DESC "
+                + "LIMIT ?";
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            ps.setInt(1, days);
+            ps.setInt(2, days);
+            ps.setInt(3, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<Product> getSeasonalByCategory(List<Integer> cids, int limit) throws SQLException {
+        if (cids == null || cids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String in = String.join(",", Collections.nCopies(cids.size(), "?"));
+        String sql = "SELECT * FROM Products WHERE CategoryID IN (" + in + ") ORDER BY CreatedAt DESC LIMIT ?";
+        List<Product> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            int i = 1;
+            for (Integer cid : cids) {
+                ps.setInt(i++, cid);
+            }
+            ps.setInt(i, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+
+    /* ========= Helpers ========= */
+    
+    /**
+     * THAY ĐỔI: Thêm 'brandName' vào phương thức
+     */
+    private void buildWhere(StringBuilder sql, List<Object> params,
+            String keyword, List<Integer> categoryIds,
+            double minPrice, double maxPrice, String brandName) {
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND ProductName LIKE ?");
+            params.add("%" + keyword.trim() + "%");
+        }
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            sql.append(" AND CategoryID IN (");
+            for (int i = 0; i < categoryIds.size(); i++) {
+                sql.append(i == 0 ? "?" : ",?");
+            }
+            sql.append(")");
+            params.addAll(categoryIds);
+        }
+        if (maxPrice > 0 && maxPrice > minPrice) {
+            sql.append(" AND Price BETWEEN ? AND ?");
+            params.add(minPrice);
+            params.add(maxPrice);
+        }
+        
+        // <-- THAY ĐỔI MỚI: Thêm logic lọc theo Brand
+        if (brandName != null && !brandName.trim().isEmpty() && !"all".equalsIgnoreCase(brandName.trim())) {
+            sql.append(" AND Brand = ?");
+            params.add(brandName.trim());
+        }
+    }
+
+    private void appendOrderBy(StringBuilder sql, String sortBy) {
+        // (Giữ nguyên code)
+        if (sortBy == null) {
+            sql.append(" ORDER BY CreatedAt DESC");
+            return;
+        }
+        switch (sortBy) {
+            case "price-asc":
+                sql.append(" ORDER BY Price ASC");
+                break;
+            case "price-desc":
+                sql.append(" ORDER BY Price DESC");
+                break;
+            default:
+                sql.append(" ORDER BY CreatedAt DESC");
+                break;
+        }
+    }
+
+    private void bindParams(PreparedStatement st, List<Object> params) throws SQLException {
+        // (Giữ nguyên code)
+        for (int i = 0; i < params.size(); i++) {
+            st.setObject(i + 1, params.get(i));
+        }
+    }
+
     private List<String> getProductImages(int productId) {
+        // (Giữ nguyên code)
         List<String> images = new ArrayList<>();
         String sql = "SELECT ImageURL FROM product_images WHERE ProductID = ?";
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
+        try (PreparedStatement st = requireConn().prepareStatement(sql)) {
             st.setInt(1, productId);
             try (ResultSet rs = st.executeQuery()) {
-                while(rs.next()) {
+                while (rs.next()) {
                     images.add(rs.getString("ImageURL"));
                 }
             }
@@ -181,11 +318,9 @@ public class ProductDAO extends DBContext {
         }
         return images;
     }
-    
-    /**
-     * Helper method to map a row from the ResultSet to a Product object.
-     */
+
     private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
+        // (Giữ nguyên code)
         Product p = new Product();
         p.setProductID(rs.getInt("ProductID"));
         p.setCategoryID(rs.getInt("CategoryID"));
@@ -201,4 +336,96 @@ public class ProductDAO extends DBContext {
         p.setCreatedAt(rs.getTimestamp("CreatedAt"));
         return p;
     }
+
+    /* ========= Lớp DTO (Giữ nguyên) ========= */
+    public static class ProductSold {
+        // (Giữ nguyên code)
+        private final Product product;
+        private final int sold;
+
+        public ProductSold(Product product, int sold) {
+            this.product = product;
+            this.sold = sold;
+        }
+        public Product getProduct() { return product; }
+        public int getSold() { return sold; }
+    }
+
+    public List<ProductSold> getBestSellersWithSold(int limit, int days) throws SQLException {
+        // (Giữ nguyên code)
+        String sql
+                = "SELECT p.*, COALESCE(SUM(oi.Quantity),0) AS Sold "
+                + "FROM Products p "
+                + "JOIN OrderItems oi ON oi.ProductID = p.ProductID "
+                + "JOIN Orders o ON o.OrderID = oi.OrderID "
+                + "WHERE o.OrderDate >= DATE_SUB(NOW(), INTERVAL ? DAY) "
+                + "GROUP BY p.ProductID "
+                + "ORDER BY Sold DESC "
+                + "LIMIT ?";
+        List<ProductSold> list = new ArrayList<>();
+        try (PreparedStatement ps = requireConn().prepareStatement(sql)) {
+            ps.setInt(1, days);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Product p = mapResultSetToProduct(rs);
+                    int sold = rs.getInt("Sold");
+                    list.add(new ProductSold(p, sold));
+                }
+            }
+        }
+        return list;
+    }
+    
+    // (Giữ nguyên các phương thức CUD)
+    public boolean insertProduct(Product p) {
+        String sql = "INSERT INTO Products(CategoryID,ProductName,Price,Description,Material,Dimensions,Features,ImageURL,Brand,Stock,CreatedAt) "
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,NOW())";
+        try (var st = connection.prepareStatement(sql)) {
+            st.setInt(1, p.getCategoryID());
+            st.setString(2, p.getProductName());
+            st.setDouble(3, p.getPrice());
+            st.setString(4, p.getDescription());
+            st.setString(5, p.getMaterial());
+            st.setString(6, p.getDimensions());
+            st.setString(7, p.getFeatures());
+            st.setString(8, p.getImageURL());
+            st.setString(9, p.getBrand());
+            st.setInt(10, p.getStock());
+            return st.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean updateProduct(Product p) {
+        String sql = "UPDATE Products SET CategoryID=?,ProductName=?,Price=?,Description=?,Material=?,Dimensions=?,Features=?,ImageURL=?,Brand=?,Stock=? WHERE ProductID=?";
+        try (var st = connection.prepareStatement(sql)) {
+            st.setInt(1, p.getCategoryID());
+            st.setString(2, p.getProductName());
+            st.setDouble(3, p.getPrice());
+            st.setString(4, p.getDescription());
+            st.setString(5, p.getMaterial());
+            st.setString(6, p.getDimensions());
+            st.setString(7, p.getFeatures());
+            st.setString(8, p.getImageURL());
+            st.setString(9, p.getBrand());
+            st.setInt(10, p.getStock());
+            st.setInt(11, p.getProductID());
+            return st.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean deleteProduct(int id) {
+        String sql = "DELETE FROM Products WHERE ProductID=?";
+        try (var st = connection.prepareStatement(sql)) {
+            st.setInt(1, id);
+            return st.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }

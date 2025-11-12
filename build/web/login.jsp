@@ -1,49 +1,73 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<jsp:include page="includes/header.jsp" />
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<main class="container" style="max-width: 500px; margin-top: 5rem; margin-bottom: 5rem;">
-    <div class="card">
-        <div class="card-body p-5">
-            <h2 class="text-center mb-4">Đăng nhập</h2>
+<jsp:include page="/includes/header.jsp" />
 
-            <%-- Hiển thị thông báo thành công (nếu có, ví dụ: sau khi reset mật khẩu) --%>
-            <c:if test="${not empty requestScope.success}">
-                <div class="alert alert-success" role="alert">
-                    ${requestScope.success}
-                </div>
-            </c:if>
-            
-            <%-- Hiển thị thông báo lỗi (nếu có) --%>
-            <c:if test="${not empty requestScope.error}">
-                <div class="alert alert-danger" role="alert">
-                    ${requestScope.error}
-                </div>
-            </c:if>
+<%-- Gộp nguồn returnTo: ưu tiên ?returnTo=..., nếu không có thì lấy từ session --%>
+<c:set var="returnTo"
+       value="${empty param.returnTo ? sessionScope.returnTo : param.returnTo}" />
 
-            <form action="login" method="post">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Mật khẩu</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                
-                <%-- THÊM LINK "QUÊN MẬT KHẨU" TẠI ĐÂY --%>
-                <div class="text-end mb-3">
-                    <a href="password-reset">Quên mật khẩu?</a>
-                </div>
-                
-                <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
-            </form>
-            
-            <div class="text-center mt-4">
-                <p>Bạn chưa có tài khoản? <a href="register">Đăng ký ngay</a></p>
-            </div>
-        </div>
+<main class="container" style="max-width:520px; margin:5rem auto;">
+  <div class="card-luxury p-4">
+    <h2 class="text-center font-playfair mb-3">Đăng nhập</h2>
+
+    <c:if test="${not empty returnTo}">
+      <div class="alert alert-info py-2">
+        Bạn cần đăng nhập để tiếp tục <strong>thanh toán</strong>.
+      </div>
+    </c:if>
+
+    <c:if test="${not empty requestScope.success}">
+      <div class="alert alert-success" role="alert">${requestScope.success}</div>
+    </c:if>
+
+    <c:if test="${not empty requestScope.error}">
+      <div class="alert alert-danger" role="alert">${requestScope.error}</div>
+    </c:if>
+
+    <form action="<c:url value='/login'/>" method="post" class="needs-validation" novalidate>
+      <c:if test="${not empty returnTo}">
+        <input type="hidden" name="returnTo" value="${fn:escapeXml(returnTo)}"/>
+      </c:if>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control rounded-pill" id="email" name="email" required
+               value="${fn:escapeXml(param.email)}">
+        <div class="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
+      </div>
+
+      <div class="mb-2">
+        <label for="password" class="form-label">Mật khẩu</label>
+        <input type="password" class="form-control rounded-pill" id="password" name="password" required>
+        <div class="invalid-feedback">Vui lòng nhập mật khẩu.</div>
+      </div>
+
+      <div class="text-end mb-3">
+        <a href="<c:url value='/password-reset'/>">Quên mật khẩu?</a>
+      </div>
+
+      <button type="submit" class="btn-luxury ripple w-100">Đăng nhập</button>
+    </form>
+
+    <div class="text-center mt-4">
+      <p>Chưa có tài khoản?
+        <a href="<c:url value='/register'/>">Đăng ký ngay</a>
+      </p>
     </div>
+  </div>
 </main>
 
-<jsp:include page="includes/footer.jsp" />
+<jsp:include page="/includes/footer.jsp" />
+
+<script>
+  // Boostrap-like client validation (nhẹ nhàng)
+  (function () {
+    const form = document.querySelector('form.needs-validation');
+    form?.addEventListener('submit', function (e) {
+      if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+      form.classList.add('was-validated');
+    });
+  })();
+</script>

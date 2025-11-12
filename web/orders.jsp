@@ -1,55 +1,136 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<jsp:include page="includes/header.jsp" />
+<%-- Thay thế toàn bộ file: orders.jsp (Đồng bộ phong cách BoConcept) --%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<fmt:setLocale value="vi_VN"/>
+
+<c:set var="pageTitle" value="Lịch sử đơn hàng - LUXE INTERIORS" scope="request"/>
+<jsp:include page="/includes/header.jsp" />
+
+<style>
+  /* CSS MỚI: Tùy chỉnh Accordion (bỏ viền, nền) */
+  .accordion-item {
+      background-color: #fdfcf9;
+      border: none;
+      border-bottom: 1px solid #eee;
+      border-radius: 0 !important;
+  }
+  .accordion-button {
+      background-color: transparent !important;
+      box-shadow: none !important;
+      color: var(--ink, #1d1a16);
+      padding: 1.25rem 0.25rem;
+  }
+  .accordion-button:not(.collapsed) {
+      color: var(--gold3, #d4af37);
+  }
+  .accordion-button::after {
+      /* Đổi màu icon mũi tên */
+      filter: invert(60%) sepia(53%) saturate(1075%) hue-rotate(1deg) brightness(90%) contrast(91%);
+  }
+  .accordion-body {
+      padding: 1.25rem 0.25rem;
+  }
+</style>
 
 <main class="container my-5">
-    <h1 class="mb-4">Lịch sử đơn hàng</h1>
-    
-    <c:if test="${not empty message}"><div class="alert alert-success">${message}</div></c:if>
+  <h1 class="font-playfair display-6 mb-4 text-luxury-gold">Lịch sử đơn hàng</h1>
 
-    <c:choose>
-        <c:when test="${empty orderList}">
-            <div class="text-center py-5"><i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i><h3 class="mb-3">Bạn chưa có đơn hàng nào</h3><a href="shop" class="btn btn-primary">Bắt đầu mua sắm</a></div>
-        </c:when>
-        <c:otherwise>
-            <div class="accordion" id="ordersAccordion">
-                <c:forEach items="${orderList}" var="order" varStatus="loop">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading${loop.index}">
-                            <button class="accordion-button ${loop.index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${loop.index}">
-                                <div class="w-100 d-flex justify-content-between pe-3 flex-wrap">
-                                    <span class="fw-bold me-3">Đơn hàng #${order.orderID}</span>
-                                    <span class="me-3"><i class="fas fa-calendar-alt me-1"></i> <fmt:formatDate value="${order.orderDate}" pattern="HH:mm dd/MM/yyyy"/></span>
-                                    <span class="badge bg-info">${order.status}</span>
-                                </div>
-                            </button>
-                        </h2>
-                        <div id="collapse${loop.index}" class="accordion-collapse collapse ${loop.index == 0 ? 'show' : ''}" data-bs-parent="#ordersAccordion">
-                            <div class="accordion-body">
-                                <p><strong>Tổng tiền:</strong> <span class="text-danger fw-bold"><fmt:formatNumber value="${order.totalAmount}" type="currency" currencyCode="VND"/></span></p>
-                                <p><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress}</p>
-                                <p><strong>Phương thức thanh toán:</strong> ${order.paymentMethod}</p>
-                                <c:if test="${not empty order.note}"><p><strong>Ghi chú:</strong> ${order.note}</p></c:if>
-                                <h6 class="mt-4">Chi tiết sản phẩm:</h6>
-                                <ul class="list-group">
-                                    <c:forEach items="${order.items}" var="item">
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <div class="d-flex align-items-center">
-                                                <img src="${item.product.imageURL}" style="width: 50px;" class="me-3 rounded"/>
-                                                <span>${item.product.productName} (x${item.quantity})</span>
-                                            </div>
-                                            <span><fmt:formatNumber value="${item.unitPrice * item.quantity}" type="currency" currencyCode="VND"/></span>
-                                        </li>
-                                    </c:forEach>
-                                </ul>
-                            </div>
-                        </div>
+  <c:if test="${not empty message}">
+    <div class="alert alert-success p-3">${message}</div>
+  </c:if>
+
+  <c:choose>
+    <c:when test="${empty orderList}">
+      <div class="p-5 text-center" style="background: #fdfcf9; border-radius: 12px;">
+        <div class="mb-3" style="font-size:60px;">📦</div>
+        <h3 class="mb-2">Bạn chưa có đơn hàng nào</h3>
+         <p class="text-muted mb-4">Mua vài món décor cho không gian sang xịn nào.</p>
+        <a class="btn-luxury ripple px-5" href="<c:url value='/shop'/>">Bắt đầu mua sắm</a>
+      </div>
+    </c:when>
+
+    <c:otherwise>
+      <div class="accordion" id="ordersAccordion">
+        <c:forEach items="${orderList}" var="order" varStatus="st">
+          <c:set var="panelId" value="order_${order.orderID}" />
+          <c:set var="isFirst" value="${st.index == 0}" />
+
+          <c:set var="statusClass" value="bg-secondary"/>
+          <c:choose>
+            <c:when test="${order.status eq 'Pending'}">    <c:set var="statusClass" value="bg-warning text-dark"/></c:when>
+            <c:when test="${order.status eq 'Processing'}"> <c:set var="statusClass" value="bg-info"/></c:when>
+            <c:when test="${order.status eq 'Shipped'}">    <c:set var="statusClass" value="bg-primary"/></c:when>
+             <c:when test="${order.status eq 'Completed' || order.status eq 'Done'}">  <c:set var="statusClass" value="bg-success"/></c:when>
+            <c:when test="${order.status eq 'Cancelled'}">  <c:set var="statusClass" value="bg-danger"/></c:when>
+          </c:choose>
+
+          <%-- THAY ĐỔI: Bỏ 'card-luxury' --%>
+          <div class="accordion-item mb-3">
+            <h2 class="accordion-header" id="h_${panelId}">
+              <button class="accordion-button ${!isFirst ? 'collapsed' : ''}" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#c_${panelId}" aria-expanded="${isFirst}" aria-controls="c_${panelId}">
+                <div class="w-100 d-flex flex-wrap gap-3 align-items-center">
+                  <span class="fw-bold">Đơn hàng #${order.orderID}</span>
+                  <span class="text-muted"><i class="fa-regular fa-clock me-1"></i>
+                    <fmt:formatDate value="${order.orderDate}" pattern="HH:mm dd/MM/yyyy"/>
+                  </span>
+                  <span class="badge ${statusClass} ms-auto">${order.status}</span>
+                </div>
+              </button>
+            </h2>
+
+            <div id="c_${panelId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}" aria-labelledby="h_${panelId}" data-bs-parent="#ordersAccordion">
+              <div class="accordion-body">
+                <div class="row g-4">
+                  <div class="col-lg-6">
+                    <div class="vstack gap-2">
+                      <div><span class="text-muted">Tổng tiền:</span>
+                        <span class="fw-bold text-danger">
+                          <fmt:formatNumber value="${order.totalAmount}" type="currency" currencyCode="VND"/>
+                        </span>
+                       </div>
+                      <div><span class="text-muted">Địa chỉ giao hàng:</span>
+                        <span class="fw-semibold">${order.shippingAddress}</span>
+                      </div>
+                      <div><span class="text-muted">Thanh toán:</span>
+                        <span class="fw-semibold">${order.paymentMethod}</span>
+                      </div>
+                      <c:if test="${not empty order.note}">
+                        <div><span class="text-muted">Ghi chú:</span> ${order.note}</div>
+                      </c:if>
                     </div>
-                </c:forEach>
+                  </div>
+
+                  <div class="col-lg-6">
+                    <h6 class="fw-semibold mb-3">Chi tiết sản phẩm</h6>
+                    <ul class="list-group">
+                      <c:forEach items="${order.items}" var="it">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                          <div class="d-flex align-items-center">
+                            <img src="${it.product.imageURL}" class="rounded me-3"
+                                 style="width:56px;height:56px;object-fit:cover"
+                                 onerror="this.src='<c:url value="/assets/images/placeholder.png"/>'" />
+                            <div>
+                              <div class="fw-semibold">${it.product.productName}</div>
+                              <div class="text-muted small">x${it.quantity}</div>
+                            </div>
+                          </div>
+                          <div class="fw-semibold">
+                             <fmt:formatNumber value="${it.unitPrice * it.quantity}" type="currency" currencyCode="VND"/>
+                          </div>
+                        </li>
+                      </c:forEach>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
-        </c:otherwise>
-    </c:choose>
+          </div>
+        </c:forEach>
+      </div>
+    </c:otherwise>
+  </c:choose>
 </main>
 
-<jsp:include page="includes/footer.jsp" />
+<jsp:include page="/includes/footer.jsp" />

@@ -3,34 +3,61 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/UserDAO.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/HomeController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/includes/header.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/shop.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/account.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/register.jsp</file>
             <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/luxe-style.css</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/home.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/includes/footer.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/product-detail.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/cart.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/checkout.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/login.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/orders.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/LoginController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/model/Order.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/OrderDAO.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/CheckoutController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/UserDAO.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/OrderItemDAO.java</file>
             <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/ProductDAO.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/CategoryDAO.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/RegisterController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/LogoutController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/HomeController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/style.css</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/js/luxe-fx.js</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/admin-luxe.css</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/CartController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/change-password.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/forgot-password.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/theme-neon.css</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/luxe-policy.css</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/policy-payment.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/policy-shipping.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/policy-privacy.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/policy-return.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/policy-terms.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/ContactController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/contact.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/DBContext.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/Utils/EmailService.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/FeedbackDAO.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/SubscribeController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/dal/SubscriberDAO.java</file>
             <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/ShopController.java</file>
             <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/ProductDetailController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/LoginController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/RegisterController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/ChangePasswordController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/change-password.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/PasswordResetController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/shop.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/product-detail.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/includes/header.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/controller/CheckoutController.java</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/includes/footer.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/home.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/cart.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/orders.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/register.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/modern-style.css</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/css/style.css</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/login.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/checkout.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/account.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/forgot-password.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/verify-code.jsp</file>
-            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/verify-registration.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/assets/images/payments/acb.png</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/admin/AdminCategoryController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/admin/AdminProductController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/admin/AdminDashboardController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/WEB-INF/admin/users-list.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/src/java/admin/AdminUserController.java</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/WEB-INF/admin/includes/admin-sidebar.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/WEB-INF/admin/category-form.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/WEB-INF/admin/categories-list.jsp</file>
+            <file>file:/D:/3.THỰC%20TẬP%20LẬP%20TRÌNH%20JAVA%20WEB/Nhom2_FurniShop/web/WEB-INF/admin/product-form.jsp</file>
         </group>
     </open-files>
 </project-private>
