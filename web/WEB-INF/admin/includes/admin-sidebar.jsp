@@ -5,23 +5,45 @@
   String ctrl = (String) request.getAttribute("adminActive");
   if (ctrl == null) ctrl = "";
 %>
-<aside class="col-12 col-md-3 col-lg-2 p-3 admin-sidebar" style="border-right:1px solid rgba(212,175,55,.18); min-height: calc(100vh - 56px)">
-  <div class="list-group list-group-dark">
-    <a href="${path}/admin" class="list-group-item list-group-item-action list-group-item-dark nav-link <%=(ctrl.equals("dashboard")?"active text-luxury-gold":"")%>">
-      <i class="fa-solid fa-chart-line me-2"></i> Dashboard
-    </a>
-    <a href="${path}/admin/products" class="list-group-item list-group-item-action list-group-item-dark nav-link <%=(ctrl.equals("products")?"active text-luxury-gold":"")%>">
-      <i class="fa-solid fa-couch me-2"></i> Sản phẩm
-    </a>
-    <a href="${path}/admin/categories" class="list-group-item list-group-item-action list-group-item-dark nav-link <%=(ctrl.equals("categories")?"active text-luxury-gold":"")%>">
-      <i class="fa-solid fa-layer-group me-2"></i> Danh mục
-    </a>
-    <a href="${path}/admin/orders" class="list-group-item list-group-item-action list-group-item-dark nav-link <%=(ctrl.equals("orders")?"active text-luxury-gold":"")%>">
-      <i class="fa-solid fa-receipt me-2"></i> Đơn hàng
-    </a>
-    <a href="${path}/admin/users" class="list-group-item list-group-item-action list-group-item-dark nav-link <%=(ctrl.equals("users")?"active text-luxury-gold":"")%>">
-      <i class="fa-solid fa-users me-2"></i> Người dùng
-    </a>
-  </div>
+
+<aside class="admin-sidebar">
+    <h3 class="sidebar-brand text-center mb-4 luxe-title text-gold">FurniShop</h3>
+            
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <%-- ĐÃ SỬA: text-gold --%>
+            <a class="nav-link <%=(ctrl.equals("dashboard")?"active text-gold":"")%>" href="${path}/admin/dashboard">
+                <i class="fa-solid fa-chart-line me-2 fa-fw"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <%-- ĐÃ SỬA: text-gold --%>
+            <a class="nav-link <%=(ctrl.equals("products")?"active text-gold":"")%>" href="${path}/admin/products">
+                <i class="fa-solid fa-couch me-2 fa-fw"></i> Sản phẩm
+            </a>
+        </li>
+        <li class="nav-item">
+            <%-- ĐÃ SỬA: text-gold --%>
+            <a class="nav-link <%=(ctrl.equals("categories")?"active text-gold":"")%>" href="${path}/admin/categories">
+                 <i class="fa-solid fa-layer-group me-2 fa-fw"></i> Danh mục
+            </a>
+        </li>
+        <li class="nav-item">
+            <%-- ĐÃ SỬA: text-gold --%>
+            <a class="nav-link <%=(ctrl.equals("orders")?"active text-gold":"")%>" href="${path}/admin/orders">
+                <i class="fa-solid fa-receipt me-2 fa-fw"></i> Đơn hàng
+            </a>
+        </li>
+        <li class="nav-item">
+            <%-- ĐÃ SỬA: text-gold --%>
+            <a class="nav-link <%=(ctrl.equals("users")?"active text-gold":"")%>" href="${path}/admin/users">
+                <i class="fa-solid fa-users me-2 fa-fw"></i> Người dùng
+            </a>
+        </li>
+        <li class="nav-item mt-3 border-top" style="border-color: var(--line) !important;">
+             <a class="nav-link" href="${path}/logout">
+                <i class="fas fa-sign-out-alt me-2 fa-fw"></i> Đăng xuất
+            </a>
+        </li>
+    </ul>
 </aside>
-<main class="col-12 col-md-9 col-lg-10 p-4">

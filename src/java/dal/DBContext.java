@@ -14,9 +14,8 @@ public class DBContext {
             String db   = "furnishop";
             String port = "3306";
             String user = "root";
-            String pass = ""; // XAMPP mặc định rỗng
+            String pass = ""; 
 
-            // UTF-8 + TZ + fix PublicKey
             String url = "jdbc:mysql://" + host + ":" + port + "/" + db
                     + "?useUnicode=true"
                     + "&characterEncoding=UTF-8"
@@ -33,6 +32,5 @@ public class DBContext {
         }
     }
 
-    /** Tuỳ lúc có DAO cần lấy connection trực tiếp. */
     public Connection getConnection() { return connection; }
 }
